@@ -600,6 +600,17 @@ class BilibiliCrawler(AbstractCrawler):
         extension_file_name = f"video.mp4"
         await bilibili_store.store_video(aid, content, extension_file_name)
 
+        # AI Agent processing
+        if config.ENABLE_AI_AGENT:
+            utils.logger.info(f"[BilibiliCrawler.get_bilibili_video] Starting AI summarization for video {aid}")
+            # Construct the absolute path to the video file
+            # Note: The path structure must match what is defined in store/bilibili/bilibilli_store_media.py
+            video_path = os.path.abspath(f"data/bili/videos/{aid}/{extension_file_name}")
+            from tools.ai_agent import VideoSummarizer
+            summarizer = VideoSummarizer()
+            # Run the synchronous summarization in a separate thread to avoid blocking the event loop
+            await asyncio.to_thread(summarizer.summarize_video, video_path)
+
     async def get_all_creator_details(self, creator_url_list: List[str]):
         """
         creator_url_list: get details for creator from creator URL list

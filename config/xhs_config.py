@@ -24,14 +24,20 @@
 SORT_TYPE = "popularity_descending"
 
 # 指定笔记URL列表, 必须要携带xsec_token参数
+# ⚠️ 重要：不支持短链接！请使用完整的小红书URL
+# 获取方法：
+#   1. 在浏览器中打开短链接 http://xhslink.com/o/8sw3jfATYB5
+#   2. 等待跳转后，复制浏览器地址栏的完整URL（类似下面的格式）
+#   3. 粘贴到这里
 XHS_SPECIFIED_NOTE_URL_LIST = [
-    "https://www.xiaohongshu.com/explore/64b95d01000000000c034587?xsec_token=AB0EFqJvINCkj6xOCKCQgfNNh8GdnBC_6XecG4QOddo3Q=&xsec_source=pc_cfeed"
+    # 示例格式（请替换为你的真实URL）：
+    # "https://www.xiaohongshu.com/explore/64b95d01000000000c034587?xsec_token=AB0EFqJvINCkj6xOCKCQgfNNh8GdnBC_6XecG4QOddo3Q=&xsec_source=pc_cfeed"
     # ........................
+    "https://www.xiaohongshu.com/explore/6932a08c000000001e011b88?app_platform=android&ignoreEngage=true&app_version=9.2.0&share_from_user_hidden=true&xsec_source=app_share&type=normal&xsec_token=CBBWATMT2U8GTHIW6xTOaHgYRBxJ-ol-lbETGC_qnmWf8=&author_share=1&shareRedId=ODpEMTU9ND82NzUyOTgwNjZFOTg5SzpK&apptime=1765103056&share_id=cc2df5077dcd4ee19241655b894d8cd5&share_channel=copy_link&appuid=64b12806000000000b015f4a&xhsshare=CopyLink",
 ]
-
 # 指定创作者URL列表，需要携带xsec_token和xsec_source参数
 
 XHS_CREATOR_ID_LIST = [
-    "https://www.xiaohongshu.com/user/profile/5f58bd990000000001003753?xsec_token=ABYVg1evluJZZzpMX-VWzchxQ1qSNVW3r-jOEnKqMcgZw=&xsec_source=pc_search"
+    # "https://www.xiaohongshu.com/user/profile/5f58bd990000000001003753?xsec_token=ABYVg1evluJZZzpMX-VWzchxQ1qSNVW3r-jOEnKqMcgZw=&xsec_source=pc_search"
     # ........................
 ]

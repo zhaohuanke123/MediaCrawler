@@ -22,6 +22,10 @@ import asyncio
 import sys
 import signal
 from typing import Optional
+from dotenv import load_dotenv
+
+# 加载 .env 文件中的环境变量
+load_dotenv()
 
 import cmd_arg
 import config
