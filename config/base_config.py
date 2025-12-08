@@ -51,7 +51,7 @@ ENABLE_CDP_MODE = True
 
 # ==================== AI Agent 配置 ====================
 # 是否启用 AI Agent 功能 (例如视频总结)
-ENABLE_AI_AGENT = True
+ENABLE_AI_AGENT = False
 
 # CDP调试端口，用于与浏览器通信
 # 如果端口被占用，系统会自动尝试下一个可用端口

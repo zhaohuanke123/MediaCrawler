@@ -33,7 +33,8 @@ BILI_SPECIFIED_ID_LIST = [
     # "https://www.bilibili.com/video/BV1HWVKzMEnh?vd_source=605ebe2174d49f92667ba78b6f0dcb17",
     # "BV15YJTzkENC",
     # "BV1u3jmzuEpm",
-    "https://www.bilibili.com/video/BV1LT2RBFEYr/",
+    # "https://www.bilibili.com/video/BV1LT2RBFEYr/",
+    "BV1oU4y1R7Km"
 ]
 
 # 指定B站创作者URL列表 (支持完整URL或UID)

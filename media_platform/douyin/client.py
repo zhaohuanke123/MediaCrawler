@@ -196,15 +196,66 @@ class DouYinClient(AbstractApiClient, ProxyRefreshMixin):
 
     async def get_video_by_id(self, aweme_id: str) -> Any:
         """
-        DouYin Video Detail API
-        :param aweme_id:
-        :return:
+        DouYin Video Detail API - 通过拦截浏览器网络请求获取视频数据
+        避免直接调用API被反爬虫拦截（返回空响应）
+        :param aweme_id: 视频ID
+        :return: 视频详情数据
         """
-        params = {"aweme_id": aweme_id}
-        headers = copy.copy(self.headers)
-        del headers["Origin"]
-        res = await self.get("/aweme/v1/web/aweme/detail/", params, headers)
-        return res.get("aweme_detail", {})
+        video_url = f"https://www.douyin.com/video/{aweme_id}"
+        utils.logger.info(f"[DouYinClient.get_video_by_id] Navigate to video page: {video_url}")
+        
+        try:
+            # 设置网络请求拦截器，捕获视频详情API响应
+            intercepted_data = {"data": None}
+            
+            async def handle_response(response):
+                """拦截视频详情API的响应"""
+                try:
+                    if '/aweme/v1/web/aweme/detail' in response.url and response.status == 200:
+                        try:
+                            json_data = await response.json()
+                            if json_data and 'aweme_detail' in json_data:
+                                intercepted_data["data"] = json_data.get("aweme_detail")
+                                utils.logger.info(f"[DouYinClient.get_video_by_id] Successfully intercepted API response")
+                        except:
+                            pass
+                except:
+                    pass
+            
+            # 注册响应监听器
+            self.playwright_page.on("response", handle_response)
+            
+            # 导航到视频页面（浏览器会自动调用视频详情API）
+            await self.playwright_page.goto(video_url, wait_until="domcontentloaded", timeout=15000)
+            
+            # 等待视频元素加载
+            try:
+                await self.playwright_page.wait_for_selector('video', timeout=5000)
+            except:
+                pass
+            
+            # 等待API请求完成
+            await asyncio.sleep(3)
+            
+            # 检查页面是否需要验证
+            page_title = await self.playwright_page.title()
+            if "验证" in page_title or "Verify" in page_title:
+                utils.logger.error(f"[DouYinClient.get_video_by_id] Page requires verification")
+                raise DataFetchError("Page requires verification")
+            
+            # 返回拦截到的数据
+            if intercepted_data["data"]:
+                return intercepted_data["data"]
+            
+            # 如果没有拦截到数据，抛出错误
+            utils.logger.error(f"[DouYinClient.get_video_by_id] Failed to intercept video data")
+            raise DataFetchError("Failed to intercept video data from page")
+            
+        except DataFetchError:
+            raise
+        except Exception as e:
+            utils.logger.error(f"[DouYinClient.get_video_by_id] Error: {e}")
+            raise DataFetchError(f"Failed to get video detail: {e}")
 
     async def get_aweme_comments(self, aweme_id: str, cursor: int = 0):
         """get note comments
