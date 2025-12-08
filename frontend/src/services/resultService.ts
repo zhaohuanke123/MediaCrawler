@@ -1,5 +1,5 @@
 import { apiClient } from './api'
-import { Result, ResultDetail, ResultsFilter, PaginationParams, Comment } from '@/types'
+import { ResultDetail, ResultsFilter, PaginationParams, Comment } from '@/types'
 
 // Get results list
 export const getResults = async (params?: PaginationParams & ResultsFilter) => {

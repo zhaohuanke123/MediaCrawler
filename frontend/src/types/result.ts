@@ -34,8 +34,9 @@ export interface Comment {
   subComments?: Comment[]
 }
 
-export interface ResultDetail extends Result {
-  comments?: Comment[]
+export interface ResultDetail extends Omit<Result, 'comments'> {
+  commentCount: number
+  commentList?: Comment[]
   statistics?: {
     totalComments: number
     totalLikes: number

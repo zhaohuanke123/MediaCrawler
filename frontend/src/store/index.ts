@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { Platform, CrawlerType, Priority, FilterOptions, Task, Result, TaskStatus } from '@/types'
+import { Platform, CrawlerType, Priority, FilterOptions, Task, Result } from '@/types'
 
 // Crawler State
 interface CrawlerState {
