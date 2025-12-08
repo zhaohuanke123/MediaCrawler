@@ -4,7 +4,7 @@ import { ThunderboltOutlined } from '@ant-design/icons'
 import PlatformSelector from './PlatformSelector'
 import { useCrawlerStore } from '@/store'
 import { startCrawler } from '@/services/crawlerService'
-import { CrawlerType } from '@/types'
+import { CrawlerType, Platform } from '@/types'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -20,7 +20,16 @@ const CrawlerForm: React.FC = () => {
     { value: 'creator', label: '创作者主页' },
   ]
 
-  const handleSubmit = async (values: any) => {
+  interface CrawlerFormValues {
+    platforms: Platform[]
+    crawlerType: CrawlerType
+    keywords: string
+    limit: number
+    enableProxy: boolean
+    enableComments: boolean
+  }
+
+  const handleSubmit = async (values: CrawlerFormValues) => {
     if (!values.platforms || values.platforms.length === 0) {
       message.error('请至少选择一个平台')
       return
@@ -39,7 +48,7 @@ const CrawlerForm: React.FC = () => {
       // In a real implementation, you might want to create multiple tasks
       const platform = values.platforms[0]
       
-      const response = await startCrawler({
+      await startCrawler({
         platform,
         crawlerType: values.crawlerType,
         keywords: values.keywords,
@@ -49,7 +58,6 @@ const CrawlerForm: React.FC = () => {
       })
 
       message.success('爬虫任务已启动！')
-      console.log('Task started:', response)
     } catch (error) {
       console.error('Failed to start crawler:', error)
       message.error('启动爬虫失败，请检查配置后重试')

@@ -1,11 +1,21 @@
 import React from 'react'
 import { Card, Form, Input, InputNumber, Switch, Button, Space, message } from 'antd'
 
+interface SettingsFormValues {
+  apiBaseUrl: string
+  defaultPageSize: number
+  enableProxy: boolean
+  proxyUrl: string
+  maxRetries: number
+  timeout: number
+}
+
 const Settings: React.FC = () => {
   const [form] = Form.useForm()
 
-  const handleSubmit = (values: any) => {
-    console.log('Settings:', values)
+  const handleSubmit = (_values: SettingsFormValues) => {
+    // TODO: Implement settings persistence
+    // Store values in localStorage or send to backend
     message.success('设置已保存')
   }
 

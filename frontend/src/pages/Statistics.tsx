@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Row, Col } from 'antd'
 import ReactECharts from 'echarts-for-react'
-import { getPlatformStatistics, getTimelineStatistics } from '@/services/statisticsService'
+import { 
+  getPlatformStatistics, 
+  getTimelineStatistics,
+  PlatformStatistics,
+  TimelineStatistics
+} from '@/services/statisticsService'
 
 const Statistics: React.FC = () => {
-  const [platformData, setPlatformData] = useState<any[]>([])
-  const [timelineData, setTimelineData] = useState<any[]>([])
+  const [platformData, setPlatformData] = useState<PlatformStatistics[]>([])
+  const [timelineData, setTimelineData] = useState<TimelineStatistics[]>([])
 
   useEffect(() => {
     loadStatistics()

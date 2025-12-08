@@ -63,8 +63,8 @@ const Results: React.FC = () => {
   const handleExport = async () => {
     try {
       const response = await exportResults({ format: 'json' })
-      // response is already a blob from the API service
-      const blob = response as unknown as Blob
+      // Export API returns blob directly (responseType: 'blob' in service)
+      const blob = response instanceof Blob ? response : new Blob([JSON.stringify(response)])
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
