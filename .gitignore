@@ -171,6 +171,13 @@ cython_debug/
 /node_modules
 docs/.vitepress/cache
 
+# Frontend build artifacts
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+frontend/.cache
+frontend/coverage
+
 # other gitignore
 .venv
 .refer
