@@ -11,15 +11,15 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.database import get_db
-from app.schemas.common import ApiResponse
-from app.schemas.statistics import (
+from backend.app.models.database import get_db
+from backend.app.schemas.common import ApiResponse
+from backend.app.schemas.statistics import (
     StatisticsSummary,
     PlatformStatistics,
     TimelineStatistics,
     KeywordStatistics
 )
-from app.services.statistics_service import StatisticsService
+from backend.app.services.statistics_service import StatisticsService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/statistics")

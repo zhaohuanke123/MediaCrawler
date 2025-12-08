@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 
-from app.config import settings, get_database_url
+from backend.app.config import settings, get_database_url
 
 # Create declarative base
 Base = declarative_base()

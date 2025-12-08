@@ -12,21 +12,21 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
-from app.models.database import get_db
-from app.models.task import Task
-from app.schemas.common import ApiResponse, PaginatedResponse
-from app.schemas.crawler import (
+from backend.app.models.database import get_db
+from backend.app.models.task import Task
+from backend.app.schemas.common import ApiResponse, PaginatedResponse
+from backend.app.schemas.crawler import (
     StartCrawlerRequest,
     StartCrawlerResponse,
     PlatformInfo
 )
-from app.schemas.task import (
+from backend.app.schemas.task import (
     TaskResponse,
     TaskDetail,
     TaskListItem,
     TaskProgress
 )
-from app.services.crawler_service import CrawlerService
+from backend.app.services.crawler_service import CrawlerService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/crawler")

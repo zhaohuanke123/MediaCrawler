@@ -10,10 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
-from app.models.database import get_db
-from app.models.task import Task
-from app.models.result import Result
-from app.schemas.common import ApiResponse
+from backend.app.models.database import get_db
+from backend.app.models.task import Task
+from backend.app.models.result import Result
+from backend.app.schemas.common import ApiResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/crawler")

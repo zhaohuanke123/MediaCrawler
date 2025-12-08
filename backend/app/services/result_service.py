@@ -10,7 +10,7 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func, and_
 
-from app.models.result import Result
+from backend.app.models.result import Result
 
 logger = logging.getLogger(__name__)
 

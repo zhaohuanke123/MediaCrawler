@@ -8,7 +8,7 @@
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.services.websocket_manager import websocket_manager
+from backend.app.services.websocket_manager import websocket_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

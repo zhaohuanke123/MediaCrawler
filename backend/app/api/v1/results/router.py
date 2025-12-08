@@ -14,15 +14,15 @@ import csv
 import json
 import io
 
-from app.models.database import get_db
-from app.schemas.common import ApiResponse, PaginatedResponse
-from app.schemas.result import (
+from backend.app.models.database import get_db
+from backend.app.schemas.common import ApiResponse, PaginatedResponse
+from backend.app.schemas.result import (
     ResultListItem,
     ResultDetail,
     BatchDeleteRequest,
     BatchDeleteResponse
 )
-from app.services.result_service import ResultService
+from backend.app.services.result_service import ResultService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/results")

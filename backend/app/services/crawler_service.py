@@ -15,13 +15,10 @@ from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-
-from app.models.task import Task
-from app.models.result import Result
-from app.services.task_manager import task_manager
-from app.services.websocket_manager import websocket_manager
+from backend.app.models.task import Task
+from backend.app.models.result import Result
+from backend.app.services.task_manager import task_manager
+from backend.app.services.websocket_manager import websocket_manager
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +78,7 @@ class CrawlerService:
         config: dict
     ):
         """Run crawler task in background"""
-        from app.models.database import AsyncSessionLocal
+        from backend.app.models.database import AsyncSessionLocal
         
         async with AsyncSessionLocal() as db:
             try:

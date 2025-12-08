@@ -10,8 +10,7 @@ from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, Index
 from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 
-from .database import Base
-from app.config import settings
+from backend.app.models.database import Base
 
 # Use Text for JSON storage in SQLite
 JSONType = Text

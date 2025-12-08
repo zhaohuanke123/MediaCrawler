@@ -14,18 +14,15 @@ import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-# Add parent directory to path to import from project root
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.config import settings
-from app.api.v1 import crawler, results, statistics, tasks
-from app.api.websocket import websocket as ws_router
-from app.models.database import init_db, close_db
-from app.services.task_manager import task_manager
+from backend.app.config import settings
+from backend.app.api.v1 import crawler, results, statistics, tasks
+from backend.app.api.websocket import websocket as ws_router
+from backend.app.models.database import init_db, close_db
+from backend.app.services.task_manager import task_manager
 
 
 # Configure logging

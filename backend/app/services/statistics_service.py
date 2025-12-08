@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
-from app.models.task import Task
-from app.models.result import Result
+from backend.app.models.task import Task
+from backend.app.models.result import Result
 
 logger = logging.getLogger(__name__)
 

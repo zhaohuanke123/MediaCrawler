@@ -12,8 +12,8 @@ from sqlalchemy.dialects.mysql import JSON as MySQLJSON
 from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy import Text as JSONText
 
-from .database import Base
-from app.config import settings
+from backend.app.models.database import Base
+from backend.app.config import settings
 
 # Use appropriate JSON type based on database
 if settings.DATABASE_TYPE == "mysql":

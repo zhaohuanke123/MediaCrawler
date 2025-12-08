@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, Text, Float, ForeignKey
 
-from .database import Base
+from backend.app.models.database import Base
 
 
 class Statistics(Base):
