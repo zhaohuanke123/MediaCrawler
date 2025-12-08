@@ -81,18 +81,14 @@ class ResultService:
     @staticmethod
     async def batch_delete_results(db: AsyncSession, result_ids: List[str]) -> tuple[int, int]:
         """Batch delete results"""
-        deleted = 0
-        failed = 0
-        
-        for result_id in result_ids:
-            try:
-                success = await ResultService.delete_result(db, result_id)
-                if success:
-                    deleted += 1
-                else:
-                    failed += 1
-            except Exception as e:
-                logger.error(f"Failed to delete result {result_id}: {e}")
-                failed += 1
-        
-        return deleted, failed
+        try:
+            # Use bulk delete for efficiency
+            result = await db.execute(delete(Result).where(Result.id.in_(result_ids)))
+            await db.commit()
+            deleted = result.rowcount
+            failed = len(result_ids) - deleted
+            return deleted, failed
+        except Exception as e:
+            logger.error(f"Failed to batch delete results: {e}")
+            await db.rollback()
+            return 0, len(result_ids)

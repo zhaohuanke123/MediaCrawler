@@ -166,7 +166,7 @@ async def batch_delete_results(
 
 @router.get("/export")
 async def export_results(
-    format: str = Query("csv", regex="^(csv|json|excel)$"),
+    format: str = Query("csv", pattern="^(csv|json|excel)$"),
     ids: Optional[str] = None,
     platform: Optional[str] = None,
     keyword: Optional[str] = None,

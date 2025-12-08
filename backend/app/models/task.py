@@ -6,21 +6,10 @@
 """Task model for crawler tasks"""
 
 import json
-from datetime import datetime
-from sqlalchemy import Column, String, Integer, DateTime, Text, Enum
-from sqlalchemy.dialects.mysql import JSON as MySQLJSON
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
-from sqlalchemy import Text as JSONText
+from datetime import datetime, timezone
+from sqlalchemy import Column, String, Integer, DateTime, Text
 
 from backend.app.models.database import Base
-from backend.app.config import settings
-
-# Use appropriate JSON type based on database
-if settings.DATABASE_TYPE == "mysql":
-    JSONType = MySQLJSON
-else:
-    # SQLite doesn't have native JSON, we'll use Text and serialize/deserialize
-    JSONType = JSONText
 
 
 class Task(Base):
@@ -46,15 +35,15 @@ class Task(Base):
         index=True,
         comment="Task status: pending|running|paused|completed|failed|cancelled"
     )
-    config = Column(JSONText, nullable=False, comment="Task configuration JSON")
+    config = Column(Text, nullable=False, comment="Task configuration JSON")
     start_time = Column(DateTime, nullable=True, index=True)
     end_time = Column(DateTime, nullable=True)
     items_collected = Column(Integer, default=0, comment="Number of items collected")
     progress = Column(Integer, default=0, comment="Progress percentage 0-100")
     errors = Column(Text, nullable=True, comment="Error messages JSON array")
     logs = Column(Text, nullable=True, comment="Task logs JSON array")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     
     def __repr__(self):
         return f"<Task(id={self.id}, platform={self.platform}, status={self.status})>"

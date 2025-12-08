@@ -7,7 +7,7 @@
 
 import logging
 from typing import Dict, Set
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class WebSocketManager:
         
         message = {
             "type": event_type,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             "data": data
         }
         

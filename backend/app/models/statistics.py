@@ -6,7 +6,7 @@
 """Statistics model"""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, DateTime, Text, Float, ForeignKey
 
 from backend.app.models.database import Base
@@ -23,7 +23,7 @@ class Statistics(Base):
     results_collected = Column(Integer, default=0)
     avg_engagement_rate = Column(Float, default=0.0)
     top_keywords = Column(Text, nullable=True, comment="JSON array of top keywords")
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
     
     def __repr__(self):
         return f"<Statistics(id={self.id}, platform={self.platform}, results={self.results_collected})>"

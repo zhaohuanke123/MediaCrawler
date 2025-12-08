@@ -6,7 +6,7 @@
 """Result model for crawler results"""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, Index
 from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 
@@ -35,7 +35,7 @@ class Result(Base):
     timestamp = Column(DateTime, nullable=False, index=True, comment="Content publish timestamp")
     tags = Column(Text, nullable=True, comment="JSON array of tags")
     sentiment = Column(String(20), nullable=True, comment="positive|neutral|negative")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     __table_args__ = (
         Index("idx_platform_timestamp", "platform", "timestamp"),

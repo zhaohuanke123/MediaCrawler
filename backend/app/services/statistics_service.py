@@ -6,6 +6,7 @@
 """Statistics service"""
 
 import logging
+import json
 from typing import List, Optional
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -106,17 +107,11 @@ class StatisticsService:
         if not start_date:
             start_date = end_date - timedelta(days=7)
         
-        # Query for platform stats
+        # Query for platform stats (without json_extract to support both SQLite and MySQL)
         query = select(
             Task.platform,
             func.count(Task.id).label("tasks"),
-            func.count(Result.id).label("results"),
-            func.avg(
-                func.coalesce(
-                    func.json_extract(Result.metrics, '$.likes'),
-                    0
-                )
-            ).label("avg_engagement")
+            func.count(Result.id).label("results")
         ).outerjoin(Result, Task.id == Result.task_id).where(
             and_(
                 Task.created_at >= start_date,
@@ -129,11 +124,38 @@ class StatisticsService:
         
         stats = []
         for row in rows:
+            # Calculate average engagement by fetching and parsing metrics
+            # This works for both SQLite and MySQL
+            avg_engagement = 0.0
+            if row.results and row.results > 0:
+                # Get sample results to calculate average
+                result_query = select(Result.metrics).where(
+                    and_(
+                        Result.task_id == Task.id,
+                        Task.platform == row.platform
+                    )
+                ).limit(100)
+                result_metrics = await db.execute(result_query)
+                metrics_rows = result_metrics.scalars().all()
+                
+                total_likes = 0
+                count = 0
+                for metrics_str in metrics_rows:
+                    try:
+                        metrics = json.loads(metrics_str) if isinstance(metrics_str, str) else metrics_str
+                        total_likes += metrics.get('likes', 0)
+                        count += 1
+                    except:
+                        pass
+                
+                if count > 0:
+                    avg_engagement = total_likes / count
+            
             stats.append({
                 "platform": row.platform,
                 "tasks": row.tasks,
                 "results": row.results or 0,
-                "avgEngagement": float(row.avg_engagement or 0),
+                "avgEngagement": float(avg_engagement),
                 "topKeywords": [],  # TODO: Implement keyword extraction
                 "growth": 0.0  # TODO: Calculate growth
             })
