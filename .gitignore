@@ -186,3 +186,8 @@ agent_zone
 debug_tools
 
 database/*.db
+# Backend API database
+media_crawler.db
+media_crawler.db-*
+backend/*.db
+backend/*.db-*
