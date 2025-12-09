@@ -3,6 +3,7 @@
 Video splitter tool for splitting long videos into chunks.
 This is needed because Gemini API doesn't support videos longer than 1 hour.
 """
+import math
 import os
 from pathlib import Path
 from typing import List, Optional
@@ -25,21 +26,28 @@ class VideoSplitter:
             max_duration_minutes: Maximum duration of each chunk in minutes (default: 30)
         """
         self.max_duration_seconds = max_duration_minutes * 60
-        self._check_ffmpeg()
+        self.ffmpeg_available = self._check_ffmpeg()
     
-    def _check_ffmpeg(self):
-        """Check if ffmpeg is installed"""
+    def _check_ffmpeg(self) -> bool:
+        """
+        Check if ffmpeg is installed
+        
+        Returns:
+            True if ffmpeg is available, False otherwise
+        """
         try:
             subprocess.run(
                 ["ffmpeg", "-version"],
                 capture_output=True,
                 check=True
             )
+            return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             utils.logger.warning(
-                "⚠️ ffmpeg not found. Video splitting requires ffmpeg. "
+                "⚠️ ffmpeg not found. Video splitting functionality will not work. "
                 "Please install it: https://ffmpeg.org/download.html"
             )
+            return False
     
     def get_video_duration(self, video_path: str) -> Optional[float]:
         """
@@ -51,6 +59,10 @@ class VideoSplitter:
         Returns:
             Duration in seconds, or None if unable to determine
         """
+        if not self.ffmpeg_available:
+            utils.logger.error("❌ ffmpeg is not available. Cannot get video duration.")
+            return None
+        
         try:
             result = subprocess.run(
                 [
@@ -97,6 +109,10 @@ class VideoSplitter:
         Returns:
             List of paths to video chunks
         """
+        if not self.ffmpeg_available:
+            utils.logger.error("❌ ffmpeg is not available. Cannot split video.")
+            return []
+        
         video_path_obj = Path(video_path)
         if not video_path_obj.exists():
             utils.logger.error(f"❌ Error: Video file not found {video_path}")
@@ -107,8 +123,8 @@ class VideoSplitter:
             utils.logger.error(f"❌ Cannot determine video duration")
             return []
         
-        # Calculate number of chunks needed
-        num_chunks = int((duration + self.max_duration_seconds - 1) / self.max_duration_seconds)
+        # Calculate number of chunks needed (ceiling division)
+        num_chunks = math.ceil(duration / self.max_duration_seconds)
         
         if num_chunks <= 1:
             utils.logger.info("ℹ️ Video is short enough, no splitting needed")

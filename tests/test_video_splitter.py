@@ -15,26 +15,48 @@ class TestVideoSplitter:
     @pytest.fixture
     def video_splitter(self):
         """Create a VideoSplitter instance with 1-minute chunks for testing"""
-        with patch.object(VideoSplitter, '_check_ffmpeg'):
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=True):
             return VideoSplitter(max_duration_minutes=1)
     
     @pytest.fixture
     def video_splitter_30min(self):
         """Create a VideoSplitter instance with default 30-minute chunks"""
-        with patch.object(VideoSplitter, '_check_ffmpeg'):
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=True):
             return VideoSplitter(max_duration_minutes=30)
     
     def test_init_default_duration(self):
         """Test initialization with default duration"""
-        with patch.object(VideoSplitter, '_check_ffmpeg'):
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=True):
             splitter = VideoSplitter()
             assert splitter.max_duration_seconds == 30 * 60
+            assert splitter.ffmpeg_available is True
     
     def test_init_custom_duration(self):
         """Test initialization with custom duration"""
-        with patch.object(VideoSplitter, '_check_ffmpeg'):
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=True):
             splitter = VideoSplitter(max_duration_minutes=45)
             assert splitter.max_duration_seconds == 45 * 60
+            assert splitter.ffmpeg_available is True
+    
+    def test_init_ffmpeg_not_available(self):
+        """Test initialization when ffmpeg is not available"""
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=False):
+            splitter = VideoSplitter()
+            assert splitter.ffmpeg_available is False
+    
+    def test_get_video_duration_no_ffmpeg(self):
+        """Test get_video_duration when ffmpeg is not available"""
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=False):
+            splitter = VideoSplitter()
+            duration = splitter.get_video_duration("/path/to/video.mp4")
+            assert duration is None
+    
+    def test_split_video_no_ffmpeg(self):
+        """Test split_video when ffmpeg is not available"""
+        with patch.object(VideoSplitter, '_check_ffmpeg', return_value=False):
+            splitter = VideoSplitter()
+            result = splitter.split_video("/path/to/video.mp4")
+            assert result == []
     
     @patch('subprocess.run')
     def test_get_video_duration_success(self, mock_run, video_splitter):
