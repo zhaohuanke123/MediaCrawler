@@ -128,7 +128,7 @@ class CrawlerService:
                                 author=f"user_{items_collected + i + 1}",
                                 author_id=f"uid_{items_collected + i + 1}",
                                 url=f"https://{platform}.com/content/{task_id}_{items_collected + i + 1}",
-                                image_urls='[]',
+                                image_urls=json.dumps([]),
                                 video_url=None,
                                 metrics=json.dumps({
                                     "likes": 100 + items_collected * 10,
@@ -143,6 +143,8 @@ class CrawlerService:
                             db.add(result)
                             items_collected += 1
                         
+                        # Commit results for this progress step
+                        # In production, this would be optimized based on actual crawler performance
                         await db.commit()
                     
                     # Update progress
