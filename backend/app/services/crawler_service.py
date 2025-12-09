@@ -115,7 +115,8 @@ class CrawlerService:
                     await asyncio.sleep(2)
                     
                     # Create sample results for this progress step (1-2 results per step)
-                    if progress > 0 and progress < 100:
+                    # Skip at 0% (start) and 100% (completion)
+                    if 0 < progress < 100:
                         num_results = 2 if progress % 20 == 0 else 1
                         for i in range(num_results):
                             result = Result(
