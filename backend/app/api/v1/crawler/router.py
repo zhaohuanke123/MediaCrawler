@@ -302,7 +302,7 @@ async def get_tasks(
             # Generate descriptive name from config keyword or use task info
             keyword = config.get('keyword', '')
             if keyword:
-                name = f"{keyword}"
+                name = keyword
             else:
                 name = f"{task.platform.upper()} {task.type} Task"
             
