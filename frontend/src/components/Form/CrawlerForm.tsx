@@ -9,6 +9,17 @@ import { CrawlerType, Platform } from '@/types'
 const { Option } = Select
 const { TextArea } = Input
 
+// Platform name mapping for backend API
+const PLATFORM_MAP: Record<Platform, string> = {
+  xiaohongshu: 'xhs',
+  douyin: 'douyin',
+  kuaishou: 'kuaishou',
+  bilibili: 'bilibili',
+  weibo: 'weibo',
+  tieba: 'tieba',
+  zhihu: 'zhihu',
+}
+
 const CrawlerForm: React.FC = () => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
@@ -47,14 +58,21 @@ const CrawlerForm: React.FC = () => {
       // For now, only using the first selected platform
       // In a real implementation, you might want to create multiple tasks
       const platform = values.platforms[0]
+      const backendPlatform = PLATFORM_MAP[platform]
       
       await startCrawler({
-        platform,
-        crawlerType: values.crawlerType,
-        keywords: values.keywords,
-        limit: values.limit,
-        enableProxy: values.enableProxy,
-        enableComments: values.enableComments,
+        platform: backendPlatform,
+        type: values.crawlerType,
+        config: {
+          keyword: values.keywords,
+          pages: values.limit,
+          sort: 'latest',
+          filters: {}
+        },
+        crawlerOptions: values.enableProxy ? {
+          proxy: 'default',
+          useCache: true
+        } : undefined
       })
 
       message.success('爬虫任务已启动！')
