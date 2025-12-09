@@ -7,6 +7,7 @@
 
 import sys
 import asyncio
+import json
 import logging
 from pathlib import Path
 from typing import Optional, Dict
@@ -129,9 +130,14 @@ class CrawlerService:
                                 url=f"https://{platform}.com/content/{task_id}_{items_collected + i + 1}",
                                 image_urls='[]',
                                 video_url=None,
-                                metrics='{"likes": ' + str(100 + items_collected * 10) + ', "comments": ' + str(20 + items_collected * 2) + ', "shares": ' + str(10 + items_collected) + ', "views": ' + str(1000 + items_collected * 100) + '}',
+                                metrics=json.dumps({
+                                    "likes": 100 + items_collected * 10,
+                                    "comments": 20 + items_collected * 2,
+                                    "shares": 10 + items_collected,
+                                    "views": 1000 + items_collected * 100
+                                }),
                                 timestamp=datetime.utcnow(),
-                                tags='["sample", "test", "' + platform + '"]',
+                                tags=json.dumps(["sample", "test", platform]),
                                 sentiment="positive"
                             )
                             db.add(result)
