@@ -50,11 +50,17 @@ const CrawlerForm: React.FC = () => {
       
       await startCrawler({
         platform,
-        crawlerType: values.crawlerType,
-        keywords: values.keywords,
-        limit: values.limit,
-        enableProxy: values.enableProxy,
-        enableComments: values.enableComments,
+        type: values.crawlerType,
+        config: {
+          keyword: values.keywords,
+          pages: values.limit,
+          sort: 'latest',
+          filters: {}
+        },
+        crawlerOptions: values.enableProxy ? {
+          proxy: 'default',
+          useCache: true
+        } : undefined
       })
 
       message.success('爬虫任务已启动！')

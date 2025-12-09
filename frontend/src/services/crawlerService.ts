@@ -3,11 +3,19 @@ import { CrawlerConfig, Platform, CrawlerType } from '@/types'
 
 export interface StartCrawlerRequest {
   platform: Platform
-  crawlerType: CrawlerType
-  keywords: string
-  limit: number
-  enableProxy?: boolean
-  enableComments?: boolean
+  type: CrawlerType
+  config: {
+    keyword?: string
+    pages?: number
+    sort?: string
+    filters?: Record<string, any>
+  }
+  crawlerOptions?: {
+    headless?: boolean
+    timeout?: number
+    proxy?: string
+    useCache?: boolean
+  }
 }
 
 export interface PlatformListResponse {
