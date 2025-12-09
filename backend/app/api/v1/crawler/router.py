@@ -299,8 +299,13 @@ async def get_tasks(
         items = []
         for task in tasks:
             config = task.get_config()
-            # Generate name from config keyword or use default
-            name = config.get('keyword', f"{task.platform}_{task.type}")
+            # Generate descriptive name from config keyword or use task info
+            keyword = config.get('keyword', '')
+            if keyword:
+                name = f"{keyword}"
+            else:
+                name = f"{task.platform.upper()} {task.type} Task"
+            
             items.append(TaskListItem(
                 id=task.id,
                 name=name,
