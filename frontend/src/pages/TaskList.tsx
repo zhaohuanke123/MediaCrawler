@@ -5,7 +5,9 @@ import {
   PauseCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
+  EyeOutlined,
 } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { useTaskStore } from '@/store'
 import { getTasks, deleteTask } from '@/services/taskService'
 import { pauseCrawler, resumeCrawler, cancelCrawler } from '@/services/crawlerService'
@@ -14,6 +16,7 @@ import { Task, TaskStatus } from '@/types'
 
 const TaskList: React.FC = () => {
   const { tasks, loading, setTasks, setLoading, removeTask } = useTaskStore()
+  const navigate = useNavigate()
 
   useEffect(() => {
     loadTasks()
@@ -120,13 +123,17 @@ const TaskList: React.FC = () => {
       dataIndex: 'progress',
       key: 'progress',
       width: 200,
-      render: (progress: any) => (
-        <Progress
-          percent={progress?.percentage || 0}
-          size="small"
-          status={progress?.percentage === 100 ? 'success' : 'active'}
-        />
-      ),
+      render: (progress: any) => {
+        // Handle both object with percentage property and direct integer value
+        const percentage = typeof progress === 'number' ? progress : (progress?.percentage || 0)
+        return (
+          <Progress
+            percent={percentage}
+            size="small"
+            status={percentage === 100 ? 'success' : 'active'}
+          />
+        )
+      },
     },
     {
       title: '创建时间',
@@ -138,7 +145,7 @@ const TaskList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 180,
+      width: 240,
       render: (_: any, record: Task) => (
         <Space size="small">
           {record.status === 'running' && (
@@ -172,7 +179,28 @@ const TaskList: React.FC = () => {
               取消
             </Button>
           )}
-          {(record.status === 'completed' || record.status === 'failed' || record.status === 'cancelled') && (
+          {(record.status === 'completed') && (
+            <>
+              <Button
+                type="link"
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => navigate('/results')}
+              >
+                结果
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(record.id)}
+              >
+                删除
+              </Button>
+            </>
+          )}
+          {(record.status === 'failed' || record.status === 'cancelled') && (
             <Button
               type="link"
               size="small"

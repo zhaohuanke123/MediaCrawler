@@ -298,16 +298,21 @@ async def get_tasks(
         # Convert to response format
         items = []
         for task in tasks:
+            config = task.get_config()
+            # Generate name from config keyword or use default
+            name = config.get('keyword', f"{task.platform}_{task.type}")
             items.append(TaskListItem(
                 id=task.id,
+                name=name,
                 platform=task.platform,
-                type=task.type,
+                crawlerType=task.type,
                 status=task.status,
                 startTime=task.start_time,
                 estimatedTime=None,
                 progress=task.progress,
                 itemsCollected=task.items_collected,
-                config=task.get_config()
+                config=config,
+                createdAt=task.created_at
             ))
         
         paginated_data = PaginatedResponse(
@@ -392,4 +397,51 @@ async def get_task_progress(task_id: str, db: AsyncSession = Depends(get_db)):
         raise
     except Exception as e:
         logger.error(f"Error getting task progress: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tasks/statistics", response_model=ApiResponse[dict])
+async def get_tasks_statistics(db: AsyncSession = Depends(get_db)):
+    """Get task statistics summary"""
+    try:
+        # Count total tasks
+        total_result = await db.execute(select(func.count()).select_from(Task))
+        total_tasks = total_result.scalar()
+        
+        # Count running tasks
+        running_result = await db.execute(
+            select(func.count()).select_from(Task).where(Task.status == 'running')
+        )
+        running_tasks = running_result.scalar()
+        
+        # Count completed tasks
+        completed_result = await db.execute(
+            select(func.count()).select_from(Task).where(Task.status == 'completed')
+        )
+        completed_tasks = completed_result.scalar()
+        
+        # Count failed tasks
+        failed_result = await db.execute(
+            select(func.count()).select_from(Task).where(Task.status == 'failed')
+        )
+        failed_tasks = failed_result.scalar()
+        
+        # Count pending tasks
+        pending_result = await db.execute(
+            select(func.count()).select_from(Task).where(Task.status == 'pending')
+        )
+        pending_tasks = pending_result.scalar()
+        
+        statistics = {
+            "totalTasks": total_tasks or 0,
+            "runningTasks": running_tasks or 0,
+            "completedTasks": completed_tasks or 0,
+            "failedTasks": failed_tasks or 0,
+            "pendingTasks": pending_tasks or 0
+        }
+        
+        return ApiResponse(success=True, data=statistics)
+        
+    except Exception as e:
+        logger.error(f"Error getting task statistics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
