@@ -305,14 +305,14 @@ async def get_tasks(
                 id=task.id,
                 name=name,
                 platform=task.platform,
-                crawlerType=task.type,
+                type=task.type,
                 status=task.status,
-                startTime=task.start_time,
-                estimatedTime=None,
+                start_time=task.start_time,
+                estimated_time=None,
                 progress=task.progress,
-                itemsCollected=task.items_collected,
+                items_collected=task.items_collected,
                 config=config,
-                createdAt=task.created_at
+                created_at=task.created_at
             ))
         
         paginated_data = PaginatedResponse(
