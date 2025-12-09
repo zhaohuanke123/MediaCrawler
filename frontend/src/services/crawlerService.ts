@@ -1,8 +1,8 @@
 import { apiClient } from './api'
-import { CrawlerConfig, Platform, CrawlerType } from '@/types'
+import { CrawlerConfig, CrawlerType } from '@/types'
 
 export interface StartCrawlerRequest {
-  platform: Platform
+  platform: string
   type: CrawlerType
   config: {
     keyword?: string
