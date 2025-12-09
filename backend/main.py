@@ -14,6 +14,12 @@ import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 
+# Add parent directory to sys.path to allow imports from project root
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -115,7 +121,7 @@ if __name__ == "__main__":
     import uvicorn
     
     uvicorn.run(
-        "main:app",
+        "backend.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.RELOAD,
