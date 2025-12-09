@@ -404,40 +404,27 @@ async def get_task_progress(task_id: str, db: AsyncSession = Depends(get_db)):
 async def get_tasks_statistics(db: AsyncSession = Depends(get_db)):
     """Get task statistics summary"""
     try:
-        # Count total tasks
-        total_result = await db.execute(select(func.count()).select_from(Task))
-        total_tasks = total_result.scalar()
+        # Use conditional aggregation in a single query for better performance
+        from sqlalchemy import case
         
-        # Count running tasks
-        running_result = await db.execute(
-            select(func.count()).select_from(Task).where(Task.status == 'running')
+        result = await db.execute(
+            select(
+                func.count().label('total'),
+                func.sum(case((Task.status == 'running', 1), else_=0)).label('running'),
+                func.sum(case((Task.status == 'completed', 1), else_=0)).label('completed'),
+                func.sum(case((Task.status == 'failed', 1), else_=0)).label('failed'),
+                func.sum(case((Task.status == 'pending', 1), else_=0)).label('pending')
+            ).select_from(Task)
         )
-        running_tasks = running_result.scalar()
         
-        # Count completed tasks
-        completed_result = await db.execute(
-            select(func.count()).select_from(Task).where(Task.status == 'completed')
-        )
-        completed_tasks = completed_result.scalar()
-        
-        # Count failed tasks
-        failed_result = await db.execute(
-            select(func.count()).select_from(Task).where(Task.status == 'failed')
-        )
-        failed_tasks = failed_result.scalar()
-        
-        # Count pending tasks
-        pending_result = await db.execute(
-            select(func.count()).select_from(Task).where(Task.status == 'pending')
-        )
-        pending_tasks = pending_result.scalar()
+        row = result.first()
         
         statistics = {
-            "totalTasks": total_tasks or 0,
-            "runningTasks": running_tasks or 0,
-            "completedTasks": completed_tasks or 0,
-            "failedTasks": failed_tasks or 0,
-            "pendingTasks": pending_tasks or 0
+            "totalTasks": int(row.total or 0),
+            "runningTasks": int(row.running or 0),
+            "completedTasks": int(row.completed or 0),
+            "failedTasks": int(row.failed or 0),
+            "pendingTasks": int(row.pending or 0)
         }
         
         return ApiResponse(success=True, data=statistics)
