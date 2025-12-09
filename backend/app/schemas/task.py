@@ -73,14 +73,16 @@ class TaskDetail(TaskResponse):
 class TaskListItem(BaseModel):
     """Task list item schema"""
     id: str
+    name: Optional[str] = None
     platform: str
-    type: str
+    type: str = Field(alias="crawlerType")
     status: str
     start_time: Optional[datetime] = Field(alias="startTime", default=None)
     estimated_time: Optional[int] = Field(alias="estimatedTime", default=None)
     progress: int
     items_collected: int = Field(alias="itemsCollected")
     config: dict
+    created_at: datetime = Field(alias="createdAt")
     
     class Config:
         populate_by_name = True

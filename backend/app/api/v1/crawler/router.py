@@ -298,16 +298,26 @@ async def get_tasks(
         # Convert to response format
         items = []
         for task in tasks:
+            config = task.get_config()
+            # Generate descriptive name from config keyword or use task info
+            keyword = config.get('keyword', '')
+            if keyword:
+                name = keyword
+            else:
+                name = f"{task.platform.upper()} {task.type} Task"
+            
             items.append(TaskListItem(
                 id=task.id,
+                name=name,
                 platform=task.platform,
                 type=task.type,
                 status=task.status,
-                startTime=task.start_time,
-                estimatedTime=None,
+                start_time=task.start_time,
+                estimated_time=None,
                 progress=task.progress,
-                itemsCollected=task.items_collected,
-                config=task.get_config()
+                items_collected=task.items_collected,
+                config=config,
+                created_at=task.created_at
             ))
         
         paginated_data = PaginatedResponse(
@@ -392,4 +402,38 @@ async def get_task_progress(task_id: str, db: AsyncSession = Depends(get_db)):
         raise
     except Exception as e:
         logger.error(f"Error getting task progress: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tasks/statistics", response_model=ApiResponse[dict])
+async def get_tasks_statistics(db: AsyncSession = Depends(get_db)):
+    """Get task statistics summary"""
+    try:
+        # Use conditional aggregation in a single query for better performance
+        from sqlalchemy import case
+        
+        result = await db.execute(
+            select(
+                func.count().label('total'),
+                func.sum(case((Task.status == 'running', 1), else_=0)).label('running'),
+                func.sum(case((Task.status == 'completed', 1), else_=0)).label('completed'),
+                func.sum(case((Task.status == 'failed', 1), else_=0)).label('failed'),
+                func.sum(case((Task.status == 'pending', 1), else_=0)).label('pending')
+            ).select_from(Task)
+        )
+        
+        row = result.first()
+        
+        statistics = {
+            "totalTasks": int(row.total or 0),
+            "runningTasks": int(row.running or 0),
+            "completedTasks": int(row.completed or 0),
+            "failedTasks": int(row.failed or 0),
+            "pendingTasks": int(row.pending or 0)
+        }
+        
+        return ApiResponse(success=True, data=statistics)
+        
+    except Exception as e:
+        logger.error(f"Error getting task statistics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
