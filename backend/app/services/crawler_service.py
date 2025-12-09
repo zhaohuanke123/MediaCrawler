@@ -104,6 +104,7 @@ class CrawlerService:
                 # In production, this would integrate with actual crawler implementations
                 logger.info(f"Starting crawler task {task_id} for {platform}")
                 
+                items_collected = 0
                 for progress in range(0, 101, 10):
                     # Check if task is paused
                     while task_manager.is_paused(task_id):
@@ -112,14 +113,39 @@ class CrawlerService:
                     # Simulate work
                     await asyncio.sleep(2)
                     
+                    # Create sample results for this progress step (1-2 results per step)
+                    if progress > 0 and progress < 100:
+                        num_results = 2 if progress % 20 == 0 else 1
+                        for i in range(num_results):
+                            result = Result(
+                                id=str(uuid4()),
+                                task_id=task_id,
+                                platform=platform,
+                                type="note" if platform == "xhs" else "video",
+                                title=f"Sample {platform} content #{items_collected + i + 1}",
+                                content=f"This is sample content from {platform} crawler task {task_id}. Progress: {progress}%",
+                                author=f"user_{items_collected + i + 1}",
+                                author_id=f"uid_{items_collected + i + 1}",
+                                url=f"https://{platform}.com/content/{task_id}_{items_collected + i + 1}",
+                                image_urls='[]',
+                                video_url=None,
+                                metrics='{"likes": ' + str(100 + items_collected * 10) + ', "comments": ' + str(20 + items_collected * 2) + ', "shares": ' + str(10 + items_collected) + ', "views": ' + str(1000 + items_collected * 100) + '}',
+                                timestamp=datetime.utcnow(),
+                                tags='["sample", "test", "' + platform + '"]',
+                                sentiment="positive"
+                            )
+                            db.add(result)
+                            items_collected += 1
+                        
+                        await db.commit()
+                    
                     # Update progress
-                    items = progress  # Simulated items collected
                     await db.execute(
                         update(Task)
                         .where(Task.id == task_id)
                         .values(
                             progress=progress,
-                            items_collected=items
+                            items_collected=items_collected
                         )
                     )
                     await db.commit()
@@ -130,7 +156,7 @@ class CrawlerService:
                         "task_progress",
                         {
                             "progress": progress,
-                            "itemsCollected": items,
+                            "itemsCollected": items_collected,
                             "status": "running",
                             "speed": 5.0
                         }
@@ -154,7 +180,7 @@ class CrawlerService:
                 await websocket_manager.broadcast_task_event(
                     task_id,
                     "task_completed",
-                    {"taskId": task_id, "status": "completed", "itemsCollected": 100}
+                    {"taskId": task_id, "status": "completed", "itemsCollected": items_collected}
                 )
                 
                 logger.info(f"Task {task_id} completed successfully")

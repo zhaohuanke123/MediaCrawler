@@ -197,8 +197,17 @@ class StatisticsService:
         rows = result.all()
         
         for row in rows:
+            # Handle different types: datetime.date, str, or None
+            if row.date:
+                if isinstance(row.date, str):
+                    timestamp = row.date
+                else:
+                    timestamp = row.date.isoformat()
+            else:
+                timestamp = datetime.utcnow().date().isoformat()
+            
             timeline.append({
-                "timestamp": row.date.isoformat() if row.date else datetime.utcnow().date().isoformat(),
+                "timestamp": timestamp,
                 "tasksCompleted": row.tasks_completed,
                 "resultsCollected": row.results_collected or 0,
                 "avgProcessingTime": 120  # TODO: Calculate actual processing time
