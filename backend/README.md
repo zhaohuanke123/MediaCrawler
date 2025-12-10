@@ -10,6 +10,18 @@ FastAPI-based backend API for MediaCrawler multi-platform content crawler system
 - **Async Operations** - Built with FastAPI and SQLAlchemy async
 - **Auto Documentation** - Interactive API docs at `/api/v1/docs`
 - **CORS Enabled** - Ready for frontend integration
+- **🆕 Real Crawler Integration** - Integrated with root directory crawler algorithms for actual data crawling
+
+## 🚀 Crawler Integration
+
+The backend now integrates with the real crawler implementations from the root directory. When you start a crawl task from the frontend, it will:
+
+1. Use the actual platform crawlers (XiaoHongShu, Douyin, Bilibili, etc.)
+2. Execute real browser automation with Playwright
+3. Store data in both the crawler database and backend database
+4. Provide real-time progress updates via WebSocket
+
+For detailed information about the crawler integration, see [CRAWLER_INTEGRATION.md](./CRAWLER_INTEGRATION.md).
 
 ## Quick Start
 
