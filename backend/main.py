@@ -12,20 +12,20 @@ FastAPI Backend Main Application Entry Point
 import sys
 import logging
 import asyncio
-import platform
 from pathlib import Path
 from contextlib import asynccontextmanager
-
-# Fix for Windows: Set WindowsSelectorEventLoopPolicy to support subprocess
-# This is required for Playwright to work on Windows
-if platform.system() == 'Windows':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Add parent directory to sys.path to allow imports from project root
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
+# Fix for Windows: Set WindowsSelectorEventLoopPolicy to support subprocess
+# This is required for Playwright to work on Windows
+# Import after adding project root to sys.path
+from tools.event_loop_fix import setup_event_loop_policy
+setup_event_loop_policy()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

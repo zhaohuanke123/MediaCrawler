@@ -8,21 +8,21 @@
 import sys
 import asyncio
 import logging
-import platform
 from pathlib import Path
 from typing import Optional, Dict, Callable
 from datetime import datetime
 from contextvars import ContextVar
 
-# Fix for Windows: Set WindowsSelectorEventLoopPolicy to support subprocess
-# This is required for Playwright to work on Windows
-if platform.system() == 'Windows':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
 # Add project root to sys.path to allow imports from root crawler modules
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
+# Fix for Windows: Set WindowsSelectorEventLoopPolicy to support subprocess
+# This is required for Playwright to work on Windows
+# Import after adding project root to sys.path
+from tools.event_loop_fix import setup_event_loop_policy
+setup_event_loop_policy()
 
 from base.base_crawler import AbstractCrawler
 from media_platform.bilibili import BilibiliCrawler

@@ -21,14 +21,13 @@
 import asyncio
 import sys
 import signal
-import platform
 from typing import Optional
 from dotenv import load_dotenv
 
 # Fix for Windows: Set WindowsSelectorEventLoopPolicy to support subprocess
 # This is required for Playwright to work on Windows
-if platform.system() == 'Windows':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+from tools.event_loop_fix import setup_event_loop_policy
+setup_event_loop_policy()
 
 # 加载 .env 文件中的环境变量
 load_dotenv()
