@@ -10,6 +10,11 @@ FastAPI Backend Main Application Entry Point
 """
 
 import sys
+import asyncio
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -116,14 +121,19 @@ app.include_router(
     tags=["WebSocket"]
 )
 
-
 if __name__ == "__main__":
     import uvicorn
+    import asyncio
+    import sys
+
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     
     uvicorn.run(
         "backend.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.RELOAD,
-        log_level=settings.LOG_LEVEL.lower()
+        log_level=settings.LOG_LEVEL.lower(),
+        loop="asyncio"
     )
