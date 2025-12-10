@@ -25,10 +25,8 @@ def setup_event_loop_policy():
     This is required because Windows' default ProactorEventLoop doesn't
     support subprocess creation, which causes NotImplementedError when
     Playwright tries to launch browser processes.
+    
+    Note: This function is idempotent and can be called multiple times safely.
     """
     if platform.system() == 'Windows':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
-# Auto-apply fix when this module is imported
-setup_event_loop_policy()
