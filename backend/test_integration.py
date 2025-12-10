@@ -5,11 +5,30 @@
 """
 
 import sys
+import os
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
+# Robustly find project root by searching for marker files
+def find_project_root() -> Path:
+    """Find project root by looking for characteristic files"""
+    current = Path(__file__).resolve().parent
+    
+    # Look for project markers (pyproject.toml, requirements.txt, etc.)
+    markers = ['pyproject.toml', 'uv.lock', 'requirements.txt', 'main.py']
+    
+    for _ in range(5):  # Search up to 5 levels
+        if any((current / marker).exists() for marker in markers):
+            return current
+        if current.parent == current:  # Reached root
+            break
+        current = current.parent
+    
+    # Fallback: assume standard structure
+    return Path(__file__).resolve().parent.parent
+
+project_root = find_project_root()
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 
 def test_imports():

@@ -9,7 +9,7 @@ import sys
 import asyncio
 import logging
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, Callable
 from datetime import datetime
 from contextvars import ContextVar
 
@@ -69,7 +69,9 @@ class RealCrawlerService:
         Returns:
             转换后的配置字典
         """
-        import config
+        # Import root config module (from project root)
+        import config as root_config
+        config = root_config
         
         # 设置基础配置
         crawler_short_name = RealCrawlerService.PLATFORM_MAP.get(platform, platform)
@@ -127,7 +129,7 @@ class RealCrawlerService:
         platform: str,
         crawler_type: str,
         config_dict: dict,
-        progress_callback: Optional[callable] = None
+        progress_callback: Optional[Callable[[int, int], None]] = None
     ) -> dict:
         """
         运行真实的爬虫
