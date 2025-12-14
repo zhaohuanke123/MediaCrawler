@@ -844,6 +844,7 @@ dependencies = [
     { name = "playwright" },
     { name = "pre-commit" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "pyexecjs" },
     { name = "pyhumps" },
     { name = "pytest" },
@@ -881,6 +882,7 @@ requires-dist = [
     { name = "playwright", specifier = "==1.45.0" },
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "pydantic", specifier = "==2.5.2" },
+    { name = "pydantic-settings", specifier = ">=2.2.1" },
     { name = "pyexecjs", specifier = "==1.5.1" },
     { name = "pyhumps", specifier = ">=3.8.0" },
     { name = "pytest", specifier = ">=7.4.0" },
@@ -1288,6 +1290,19 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/8c/80/b7678c547b947cec35c136d88baf315fa6837500d9f8ce7353347f50a521/pydantic_core-2.14.5-cp312-none-win32.whl", hash = "sha256:699156034181e2ce106c89ddb4b6504c30db8caa86e0c30de47b3e0654543260", size = 1741746, upload-time = "2023-11-22T13:03:39.553Z" },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/60/5a/3161e1a1c138407cd2037b12ecdbe29f4890ccda1c0a0be69438c7d0065d/pydantic_core-2.14.5-cp312-none-win_amd64.whl", hash = "sha256:5baab5455c7a538ac7e8bf1feec4278a66436197592a9bed538160a2e7d11e36", size = 1874829, upload-time = "2023-11-22T13:03:42.438Z" },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/cf/b7/9bacf7f9439f785b2fe6d8199e28ad75ad25406f97f33c0186274a48a36d/pydantic_core-2.14.5-cp312-none-win_arm64.whl", hash = "sha256:e47e9a08bcc04d20975b6434cc50bf82665fbc751bcce739d04a3120428f3e27", size = 1844793, upload-time = "2023-11-22T13:03:44.466Z" },
+]
+
+[[package]]
+name = "pydantic-settings"
+version = "2.2.1"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/00/a4/89191c3cce6e6f79b734bfe81d3a8f176d21b57b034689cfbdc57d61c412/pydantic_settings-2.2.1.tar.gz", hash = "sha256:00b9f6a5e95553590434c0fa01ead0b216c3e10bc54ae02e37f359948643c5ed", size = 35495, upload-time = "2024-02-19T19:50:21.398Z" }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/99/ee/24ec87e3a91426497c5a2b9880662d19cfd640342d477334ebc60fc2c276/pydantic_settings-2.2.1-py3-none-any.whl", hash = "sha256:0235391d26db4d2190cb9b31051c4b46882d28a51533f97440867f012d4da091", size = 13150, upload-time = "2024-02-19T19:50:19.747Z" },
 ]
 
 [[package]]
