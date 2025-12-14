@@ -99,14 +99,14 @@ async def update_up_info(video_item: Dict):
     await BiliStoreFactory.create_store().store_creator(creator=saver_up_info)
 
 
-async def batch_update_bilibili_video_comments(video_id: str, comments: List[Dict]):
+async def batch_update_bilibili_video_comments(video_id: str, comments: List[Dict], title: str = None):
     if not comments:
         return
     for comment_item in comments:
-        await update_bilibili_video_comment(video_id, comment_item)
+        await update_bilibili_video_comment(video_id, comment_item, title)
 
 
-async def update_bilibili_video_comment(video_id: str, comment_item: Dict):
+async def update_bilibili_video_comment(video_id: str, comment_item: Dict, title: str = None):
     comment_id = str(comment_item.get("rpid"))
     parent_comment_id = str(comment_item.get("parent", 0))
     content: Dict = comment_item.get("content")
@@ -127,22 +127,26 @@ async def update_bilibili_video_comment(video_id: str, comment_item: Dict):
         "like_count": like_count,
         "last_modify_ts": utils.get_current_timestamp(),
     }
+    if title:
+        save_comment_item["title_for_filename"] = title
     utils.logger.info(f"[store.bilibili.update_bilibili_video_comment] Bilibili video comment: {comment_id}, content: {save_comment_item.get('content')}")
     await BiliStoreFactory.create_store().store_comment(comment_item=save_comment_item)
 
 
-async def store_video(aid, video_content, extension_file_name):
+async def store_video(aid, video_content, extension_file_name, title=None):
     """
     video video storage implementation
     Args:
         aid:
         video_content:
         extension_file_name:
+        title:
     """
     await BilibiliVideo().store_video({
         "aid": aid,
         "video_content": video_content,
         "extension_file_name": extension_file_name,
+        "title": title
     })
 
 

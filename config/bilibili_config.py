@@ -34,7 +34,14 @@ BILI_SPECIFIED_ID_LIST = [
     # "BV15YJTzkENC",
     # "BV1u3jmzuEpm",
     # "https://www.bilibili.com/video/BV1LT2RBFEYr/",
-    "BV1oU4y1R7Km"
+    # "BV1oU4y1R7Km"
+    # "BV12Z4y1B7th",
+    # "https://www.bilibili.com/video/BV1AZmuBHEvC",
+    # "https://www.bilibili.com/video/BV1Xq2GBBEBn",
+    # "https://www.bilibili.com/video/BV1EYmwBxE9B"
+    # "https://www.bilibili.com/video/BV1fHUoB5EzY"
+    # "https://www.bilibili.com/video/BV1qFUhBeEca"
+    "https://www.bilibili.com/video/BV1eUxve7Ein"
 ]
 
 # 指定B站创作者URL列表 (支持完整URL或UID)

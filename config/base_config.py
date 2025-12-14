@@ -93,7 +93,7 @@ MAX_CONCURRENCY_NUM = 1
 ENABLE_GET_MEIDAS = True
 
 # 是否开启爬评论模式, 默认开启爬评论（抖音建议先关闭评论爬取，减少请求）
-ENABLE_GET_COMMENTS = False
+ENABLE_GET_COMMENTS = True
 
 # 爬取一级评论的数量控制(单视频/帖子)
 CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES = 10

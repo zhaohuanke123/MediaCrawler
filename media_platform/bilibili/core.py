@@ -24,6 +24,7 @@
 
 import asyncio
 import os
+import functools
 # import random  # Removed as we now use fixed config.CRAWLER_MAX_SLEEP_SEC intervals
 from asyncio import Task
 from typing import Dict, List, Optional, Tuple, Union
@@ -301,7 +302,9 @@ class BilibiliCrawler(AbstractCrawler):
                                     break
                                 notes_count_this_day += 1
                                 total_notes_crawled_for_keyword += 1
-                                video_id_list.append(video_item.get("View").get("aid"))
+                                video_id = video_item.get("View").get("aid")
+                                video_title = video_item.get("View").get("title")
+                                video_id_list.append({"id": video_id, "title": video_title})
                                 await bilibili_store.update_bilibili_video(video_item)
                                 await bilibili_store.update_up_info(video_item)
                                 await self.get_bilibili_video(video_item, semaphore)
@@ -318,10 +321,10 @@ class BilibiliCrawler(AbstractCrawler):
                         utils.logger.error(f"[BilibiliCrawler.search] Error searching on {day.ctime()}: {e}")
                         break
 
-    async def batch_get_video_comments(self, video_id_list: List[str]):
+    async def batch_get_video_comments(self, video_id_list: List[Union[str, Dict]]):
         """
         batch get video comments
-        :param video_id_list:
+        :param video_id_list: list of video ids or dicts with id and title
         :return:
         """
         if not config.ENABLE_GET_COMMENTS:
@@ -331,16 +334,23 @@ class BilibiliCrawler(AbstractCrawler):
         utils.logger.info(f"[BilibiliCrawler.batch_get_video_comments] video ids:{video_id_list}")
         semaphore = asyncio.Semaphore(config.MAX_CONCURRENCY_NUM)
         task_list: List[Task] = []
-        for video_id in video_id_list:
-            task = asyncio.create_task(self.get_comments(video_id, semaphore), name=video_id)
+        for item in video_id_list:
+            if isinstance(item, dict):
+                video_id = item.get("id")
+                title = item.get("title")
+            else:
+                video_id = item
+                title = None
+            task = asyncio.create_task(self.get_comments(video_id, semaphore, title), name=str(video_id))
             task_list.append(task)
         await asyncio.gather(*task_list)
 
-    async def get_comments(self, video_id: str, semaphore: asyncio.Semaphore):
+    async def get_comments(self, video_id: str, semaphore: asyncio.Semaphore, title: str = None):
         """
         get comment for video id
         :param video_id:
         :param semaphore:
+        :param title:
         :return:
         """
         async with semaphore:
@@ -348,11 +358,16 @@ class BilibiliCrawler(AbstractCrawler):
                 utils.logger.info(f"[BilibiliCrawler.get_comments] begin get video_id: {video_id} comments ...")
                 await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
                 utils.logger.info(f"[BilibiliCrawler.get_comments] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after fetching comments for video {video_id}")
+                
+                callback = bilibili_store.batch_update_bilibili_video_comments
+                if title:
+                    callback = functools.partial(bilibili_store.batch_update_bilibili_video_comments, title=title)
+
                 await self.bili_client.get_video_all_comments(
                     video_id=video_id,
                     crawl_interval=config.CRAWLER_MAX_SLEEP_SEC,
                     is_fetch_sub_comments=config.ENABLE_GET_SUB_COMMENTS,
-                    callback=bilibili_store.batch_update_bilibili_video_comments,
+                    callback=callback,
                     max_count=config.CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES,
                 )
 
@@ -405,8 +420,9 @@ class BilibiliCrawler(AbstractCrawler):
             if video_detail is not None:
                 video_item_view: Dict = video_detail.get("View")
                 video_aid: str = video_item_view.get("aid")
+                video_title: str = video_item_view.get("title")
                 if video_aid:
-                    video_aids_list.append(video_aid)
+                    video_aids_list.append({"id": video_aid, "title": video_title})
                 await bilibili_store.update_bilibili_video(video_detail)
                 await bilibili_store.update_up_info(video_detail)
                 await self.get_bilibili_video(video_detail, semaphore)
@@ -598,14 +614,17 @@ class BilibiliCrawler(AbstractCrawler):
         if content is None:
             return
         extension_file_name = f"video.mp4"
-        await bilibili_store.store_video(aid, content, extension_file_name)
+        title = video_item_view.get("title")
+        await bilibili_store.store_video(aid, content, extension_file_name, title=title)
 
         # AI Agent processing
         if config.ENABLE_AI_AGENT:
             utils.logger.info(f"[BilibiliCrawler.get_bilibili_video] Starting AI summarization for video {aid}")
             # Construct the absolute path to the video file
             # Note: The path structure must match what is defined in store/bilibili/bilibilli_store_media.py
-            video_path = os.path.abspath(f"data/bili/videos/{aid}/{extension_file_name}")
+            sanitized_title = utils.sanitize_filename(title)
+            if len(sanitized_title) > 50: sanitized_title = sanitized_title[:50]
+            video_path = os.path.abspath(f"data/bili/videos/{aid}/{sanitized_title}_{extension_file_name}")
             from tools.ai_agent import VideoSummarizer
             summarizer = VideoSummarizer()
             # Run the synchronous summarization in a separate thread to avoid blocking the event loop

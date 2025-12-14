@@ -73,9 +73,17 @@ class BiliCsvStoreImplement(AbstractStore):
         Returns:
 
         """
+        title = comment_item.pop("title_for_filename", None)
+        filename = None
+        if title:
+             sanitized_title = utils.sanitize_filename(title)
+             if len(sanitized_title) > 50: sanitized_title = sanitized_title[:50]
+             filename = f"{sanitized_title}_comments"
+
         await self.file_writer.write_to_csv(
             item=comment_item,
-            item_type="comments"
+            item_type="comments",
+            filename=filename
         )
 
     async def store_creator(self, creator: Dict):
@@ -148,6 +156,7 @@ class BiliDbStoreImplement(AbstractStore):
         Args:
             comment_item: comment item dict
         """
+        comment_item.pop("title_for_filename", None) # Remove extra key
         comment_id = comment_item.get("comment_id")
         async with get_session() as session:
             result = await session.execute(select(BilibiliVideoComment).where(BilibiliVideoComment.comment_id == comment_id))
@@ -256,9 +265,17 @@ class BiliJsonStoreImplement(AbstractStore):
         Returns:
 
         """
+        title = comment_item.pop("title_for_filename", None)
+        filename = None
+        if title:
+             sanitized_title = utils.sanitize_filename(title)
+             if len(sanitized_title) > 50: sanitized_title = sanitized_title[:50]
+             filename = f"{sanitized_title}_comments"
+
         await self.file_writer.write_single_item_to_json(
             item=comment_item,
-            item_type="comments"
+            item_type="comments",
+            filename=filename
         )
 
     async def store_creator(self, creator: Dict):

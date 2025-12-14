@@ -53,3 +53,15 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+import re
+
+def sanitize_filename(filename: str) -> str:
+    """
+    Sanitize filename by removing illegal characters
+    :param filename:
+    :return:
+    """
+    return re.sub(r'[\\/*?:"<>|]', "", filename).strip()
+
