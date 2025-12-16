@@ -1,0 +1,2 @@
+APP_ID = "cli_a9b48d0c88789bcc" 
+APP_SECRET = "5kpeaChtpj2XG7ZPRbkBefOj65Y8Ey2D"

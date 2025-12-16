@@ -133,7 +133,7 @@ async def update_bilibili_video_comment(video_id: str, comment_item: Dict, title
     await BiliStoreFactory.create_store().store_comment(comment_item=save_comment_item)
 
 
-async def store_video(aid, video_content, extension_file_name, title=None):
+async def store_video(aid, video_content, extension_file_name, title=None, bvid=None):
     """
     video video storage implementation
     Args:
@@ -141,9 +141,11 @@ async def store_video(aid, video_content, extension_file_name, title=None):
         video_content:
         extension_file_name:
         title:
+        bvid:
     """
     await BilibiliVideo().store_video({
         "aid": aid,
+        "bvid": bvid,
         "video_content": video_content,
         "extension_file_name": extension_file_name,
         "title": title

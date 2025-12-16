@@ -524,12 +524,12 @@ class BilibiliCrawler(AbstractCrawler):
                     "height": 1080
                 },
                 user_agent=user_agent,
-                channel="chrome",  # 使用系统的Chrome稳定版
+                # channel="chrome",  # 使用系统的Chrome稳定版
             )
             return browser_context
         else:
             # type: ignore
-            browser = await chromium.launch(headless=headless, proxy=playwright_proxy, channel="chrome")
+            browser = await chromium.launch(headless=headless, proxy=playwright_proxy) # , channel="chrome")
             browser_context = await browser.new_context(viewport={"width": 1920, "height": 1080}, user_agent=user_agent)
             return browser_context
 
@@ -615,16 +615,22 @@ class BilibiliCrawler(AbstractCrawler):
             return
         extension_file_name = f"video.mp4"
         title = video_item_view.get("title")
-        await bilibili_store.store_video(aid, content, extension_file_name, title=title)
+        bvid = video_item_view.get("bvid")
+        
+        # Pass bvid to store_video
+        await bilibili_store.store_video(aid, content, extension_file_name, title=title, bvid=bvid)
 
         # AI Agent processing
         if config.ENABLE_AI_AGENT:
-            utils.logger.info(f"[BilibiliCrawler.get_bilibili_video] Starting AI summarization for video {aid}")
+            utils.logger.info(f"[BilibiliCrawler.get_bilibili_video] Starting AI summarization for video {bvid or aid}")
             # Construct the absolute path to the video file
             # Note: The path structure must match what is defined in store/bilibili/bilibilli_store_media.py
             sanitized_title = utils.sanitize_filename(title)
             if len(sanitized_title) > 50: sanitized_title = sanitized_title[:50]
-            video_path = os.path.abspath(f"data/bili/videos/{aid}/{sanitized_title}_{extension_file_name}")
+            
+            # Use bvid if available, else aid
+            folder_name = bvid if bvid else aid
+            video_path = os.path.abspath(f"data/bili/videos/{folder_name}/{sanitized_title}_{extension_file_name}")
             from tools.ai_agent import VideoSummarizer
             summarizer = VideoSummarizer()
             # Run the synchronous summarization in a separate thread to avoid blocking the event loop

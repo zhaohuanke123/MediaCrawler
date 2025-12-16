@@ -43,19 +43,22 @@ class BilibiliVideo(AbstractStoreVideo):
         Returns:
 
         """
+        # Prefer using bvid if available, otherwise fallback to aid
+        folder_name = video_content_item.get("bvid") or video_content_item.get("aid")
+        
         await self.save_video(
-            video_content_item.get("aid"), 
+            folder_name, 
             video_content_item.get("video_content"), 
             video_content_item.get("extension_file_name"),
             video_content_item.get("title")
         )
 
-    def make_save_file_name(self, aid: str, extension_file_name: str, title: str = None) -> str:
+    def make_save_file_name(self, folder_name: str, extension_file_name: str, title: str = None) -> str:
         """
         make save file name by store type
 
         Args:
-            aid: aid
+            folder_name: folder name (bvid or aid)
             extension_file_name: video filename with extension
             title: video title
 
@@ -67,15 +70,15 @@ class BilibiliVideo(AbstractStoreVideo):
             # Limit title length to avoid filesystem issues
             if len(sanitized_title) > 50:
                 sanitized_title = sanitized_title[:50]
-            return f"{self.video_store_path}/{aid}/{sanitized_title}_{extension_file_name}"
-        return f"{self.video_store_path}/{aid}/{extension_file_name}"
+            return f"{self.video_store_path}/{folder_name}/{sanitized_title}_{extension_file_name}"
+        return f"{self.video_store_path}/{folder_name}/{extension_file_name}"
 
-    async def save_video(self, aid: int, video_content: str, extension_file_name="mp4", title: str = None):
+    async def save_video(self, folder_name: str, video_content: str, extension_file_name="mp4", title: str = None):
         """
         save video to local
 
         Args:
-            aid: aid
+            folder_name: folder name (bvid or aid)
             video_content: video content
             extension_file_name: video filename with extension
             title: video title
@@ -83,8 +86,8 @@ class BilibiliVideo(AbstractStoreVideo):
         Returns:
 
         """
-        pathlib.Path(self.video_store_path + "/" + str(aid)).mkdir(parents=True, exist_ok=True)
-        save_file_name = self.make_save_file_name(str(aid), extension_file_name, title)
+        pathlib.Path(self.video_store_path + "/" + str(folder_name)).mkdir(parents=True, exist_ok=True)
+        save_file_name = self.make_save_file_name(str(folder_name), extension_file_name, title)
         async with aiofiles.open(save_file_name, 'wb') as f:
             await f.write(video_content)
             utils.logger.info(f"[BilibiliVideoImplement.save_video] save save_video {save_file_name} success ...")

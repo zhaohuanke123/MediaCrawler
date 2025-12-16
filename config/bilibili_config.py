@@ -41,7 +41,7 @@ BILI_SPECIFIED_ID_LIST = [
     # "https://www.bilibili.com/video/BV1EYmwBxE9B"
     # "https://www.bilibili.com/video/BV1fHUoB5EzY"
     # "https://www.bilibili.com/video/BV1qFUhBeEca"
-    "https://www.bilibili.com/video/BV1eUxve7Ein"
+    # "https://www.bilibili.com/video/BV1eUxve7Ein"
 ]
 
 # 指定B站创作者URL列表 (支持完整URL或UID)

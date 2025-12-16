@@ -13,7 +13,7 @@ from tools.video_splitter import VideoSplitter
 load_dotenv()
 
 class VideoSummarizer:
-    def __init__(self, api_key: Optional[str] = None, proxy_url: Optional[str] = None, max_chunk_duration: int = 30):
+    def __init__(self, api_key: Optional[str] = None, proxy_url: Optional[str] = None, max_chunk_duration: int = 45):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             utils.logger.warning("GEMINI_API_KEY not found. AI Agent functionality might not work.")
@@ -166,11 +166,12 @@ class VideoSummarizer:
             
             请整合所有内容，输出格式要求为 Markdown，包含以下部分：
             1. **视频完整摘要**：简明扼要地概括整个视频的核心内容。
-            2. **关键要点 (Key Takeaways)**：整合所有部分的关键信息，使用列表形式。
+            2. **关键要点 (Key Takeaways)**：整合所有部分的关键信息, 包含时间线，使用列表形式。
             3. **详细内容**：按逻辑顺序整合所有部分的内容，形成连贯的叙述。
             4. **总结与思考**：基于完整视频内容的总结性思考和启发。
             
             请用中文输出。
+            由于系统限制，请不要使用 # 标题语法，改用 **加粗** 来表示小标题。不要使用表格。
             """
             
             response = self.client.models.generate_content(
@@ -188,13 +189,14 @@ class VideoSummarizer:
             utils.logger.info("ℹ️ Falling back to concatenated summaries")
             return combined_text
     
-    def summarize_video(self, video_path: str, auto_split: bool = True) -> Optional[str]:
+    def summarize_video(self, video_path: str, auto_split: bool = True, output_dir: Optional[str] = None) -> Optional[str]:
         """
         Summarize video, automatically splitting if longer than max duration
         
         Args:
             video_path: Path to video file
             auto_split: Whether to automatically split long videos (default: True)
+            output_dir: Directory to save the summary file. If None, saves in the same directory as video.
             
         Returns:
             Path to summary markdown file, or None if failed
@@ -211,7 +213,7 @@ class VideoSummarizer:
         # Check if video needs splitting
         if auto_split and self.video_splitter.needs_splitting(video_path):
             utils.logger.info("📹 Video is longer than limit, splitting into chunks...")
-            return self.summarize_video_in_chunks(video_path)
+            return self.summarize_video_in_chunks(video_path, output_dir=output_dir)
         
         # Video is short enough, process normally
         utils.logger.info(f"🚀 Uploading video: {video_path_obj.name}")
@@ -229,7 +231,9 @@ class VideoSummarizer:
             2. **关键要点 (Key Takeaways)**：使用列表形式。
             3. **详细内容**：按时间逻辑或主题逻辑分段落描述，如果视频中有明确的章节，请列出。
             4. **后续思考**：基于视频内容延伸的一个启发。
+            
             请用中文输出。
+            由于系统限制，请不要使用 # 标题语法，改用 **加粗** 来表示小标题。不要使用表格。
             """
 
             response = self.client.models.generate_content(
@@ -240,11 +244,24 @@ class VideoSummarizer:
                 )
             )
             
-            output_path = video_path_obj.with_name(f"{video_path_obj.stem}_summary.md")
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(response.text)
-                
-            utils.logger.info(f"✨ Summary saved to: {output_path}")
+            if output_dir:
+                output_path = Path(output_dir) / f"{video_path_obj.stem}_summary.md"
+            else:
+                output_path = video_path_obj.with_name(f"{video_path_obj.stem}_summary.md")
+            
+            if response.text:
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(response.text)
+                utils.logger.info(f"✨ Summary saved to: {output_path}")
+            else:
+                utils.logger.error("❌ AI returned no text. Possible safety block or empty response.")
+                # Cleanup video file even if summarization failed
+                try:
+                    self.client.files.delete(name=video_file.name)
+                    utils.logger.info("🧹 Uploaded video file deleted.")
+                except Exception as e:
+                    utils.logger.error(f"❌ Error deleting file: {e}")
+                return None
             
             # Cleanup
             try:
@@ -259,12 +276,13 @@ class VideoSummarizer:
             utils.logger.error(f"❌ Error during summarization: {e}")
             return None
     
-    def summarize_video_in_chunks(self, video_path: str) -> Optional[str]:
+    def summarize_video_in_chunks(self, video_path: str, output_dir: Optional[str] = None) -> Optional[str]:
         """
         Split video into chunks and summarize each chunk with context
         
         Args:
             video_path: Path to video file
+            output_dir: Directory to save the summary file. If None, saves in the same directory as video.
             
         Returns:
             Path to final summary markdown file, or None if failed
@@ -314,7 +332,11 @@ class VideoSummarizer:
         final_summary = self._generate_final_summary(chunk_summaries, video_path_obj.name)
         
         # Save final summary
-        output_path = video_path_obj.with_name(f"{video_path_obj.stem}_summary.md")
+        if output_dir:
+            output_path = Path(output_dir) / f"{video_path_obj.stem}_summary.md"
+        else:
+            output_path = video_path_obj.with_name(f"{video_path_obj.stem}_summary.md")
+            
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(final_summary)
         
