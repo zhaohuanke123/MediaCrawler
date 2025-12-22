@@ -191,3 +191,6 @@ media_crawler.db
 media_crawler.db-*
 backend/*.db
 backend/*.db-*
+
+
+summary_output

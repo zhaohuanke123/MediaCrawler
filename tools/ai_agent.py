@@ -9,11 +9,12 @@ from google.genai import types
 
 from tools import utils
 from tools.video_splitter import VideoSplitter
+from tools.ai_prompt import VideoSummaryPrompts
 
 load_dotenv()
 
 class VideoSummarizer:
-    def __init__(self, api_key: Optional[str] = None, proxy_url: Optional[str] = None, max_chunk_duration: int = 45):
+    def __init__(self, api_key: Optional[str] = None, proxy_url: Optional[str] = None, max_chunk_duration: int = 45, prompts: Optional[VideoSummaryPrompts] = None):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             utils.logger.warning("GEMINI_API_KEY not found. AI Agent functionality might not work.")
@@ -37,6 +38,9 @@ class VideoSummarizer:
         
         # Initialize video splitter
         self.video_splitter = VideoSplitter(max_duration_minutes=max_chunk_duration)
+        
+        # Initialize prompts
+        self.prompts = prompts or VideoSummaryPrompts()
 
     def wait_for_files_active(self, file_upload):
         """
@@ -85,32 +89,16 @@ class VideoSummarizer:
             
             # Build prompt based on whether this is first chunk or continuation
             if chunk_index == 1:
-                prompt = f"""
-                请作为一名专业的笔记整理员，观看这段视频并进行详细总结。
-                注意：这是一个长视频的第 {chunk_index} 部分（共 {total_chunks} 部分）。
-                
-                输出格式要求为 Markdown，包含以下部分：
-                1. **本段摘要**：简明扼要地总结本段内容。
-                2. **关键要点**：使用列表形式列出本段的关键信息。
-                3. **详细内容**：按时间逻辑或主题逻辑分段落描述本段内容。
-                
-                请用中文输出。
-                """
+                prompt = self.prompts.chunk_first.format(
+                    chunk_index=chunk_index,
+                    total_chunks=total_chunks
+                )
             else:
-                prompt = f"""
-                请作为一名专业的笔记整理员，继续观看这段视频并进行详细总结。
-                这是一个长视频的第 {chunk_index} 部分（共 {total_chunks} 部分）。
-                
-                **前面部分的总结：**
-                {previous_summary}
-                
-                请在理解前面内容的基础上，总结本段新内容。输出格式要求为 Markdown，包含：
-                1. **本段摘要**：简明扼要地总结本段内容，与前面内容的衔接。
-                2. **关键要点**：使用列表形式列出本段的关键信息。
-                3. **详细内容**：按时间逻辑或主题逻辑分段落描述本段内容。
-                
-                请用中文输出。
-                """
+                prompt = self.prompts.chunk_continuation.format(
+                    chunk_index=chunk_index,
+                    total_chunks=total_chunks,
+                    previous_summary=previous_summary
+                )
 
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
@@ -156,23 +144,10 @@ class VideoSummarizer:
         ])
         
         try:
-            prompt = f"""
-            请作为一名专业的笔记整理员，基于以下各部分的总结，生成一个完整、连贯的视频总结。
-            
-            视频文件名：{original_video_name}
-            
-            各部分总结：
-            {combined_text}
-            
-            请整合所有内容，输出格式要求为 Markdown，包含以下部分：
-            1. **视频完整摘要**：简明扼要地概括整个视频的核心内容。
-            2. **关键要点 (Key Takeaways)**：整合所有部分的关键信息, 包含时间线，使用列表形式。
-            3. **详细内容**：按逻辑顺序整合所有部分的内容，形成连贯的叙述。
-            4. **总结与思考**：基于完整视频内容的总结性思考和启发。
-            
-            请用中文输出。
-            由于系统限制，请不要使用 # 标题语法，改用 **加粗** 来表示小标题。不要使用表格。
-            """
+            prompt = self.prompts.final_summary.format(
+                original_video_name=original_video_name,
+                combined_text=combined_text
+            )
             
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
@@ -224,17 +199,7 @@ class VideoSummarizer:
 
             utils.logger.info("🤖 AI is watching and summarizing the video...")
             
-            prompt = """
-            请作为一名专业的笔记整理员，观看这段视频并进行详细总结。
-            输出格式要求为 Markdown，包含以下部分：
-            1. **视频一句话摘要**：简明扼要。
-            2. **关键要点 (Key Takeaways)**：使用列表形式。
-            3. **详细内容**：按时间逻辑或主题逻辑分段落描述，如果视频中有明确的章节，请列出。
-            4. **后续思考**：基于视频内容延伸的一个启发。
-            
-            请用中文输出。
-            由于系统限制，请不要使用 # 标题语法，改用 **加粗** 来表示小标题。不要使用表格。
-            """
+            prompt = self.prompts.single_video
 
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",

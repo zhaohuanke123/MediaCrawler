@@ -21,7 +21,7 @@ async def main():
     config.BILI_SPECIFIED_ID_LIST = [video_id]
     config.SAVE_DATA_OPTION = "json"
     config.HEADLESS = True
-    config.ENABLE_CDP_MODE = True
+    config.ENABLE_CDP_MODE = False
     # 禁用爬虫内部的 AI Agent，防止重复运行
     config.ENABLE_AI_AGENT = False
     
