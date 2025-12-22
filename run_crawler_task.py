@@ -9,23 +9,43 @@ from tools.ai_agent import VideoSummarizer
 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("video_id", help="Bilibili Video ID")
+    parser.add_argument("platform", help="Platform (bili, dy, xhs)")
+    parser.add_argument("video_id", help="Video ID or Note ID")
     args = parser.parse_args()
     
+    platform = args.platform
     video_id = args.video_id
-    print(f"Task received video_id: {video_id}")
+    print(f"Task received platform: {platform}, video_id: {video_id}")
 
     # Config setup
-    config.PLATFORM = "bili"
+    config.PLATFORM = platform
     config.CRAWLER_TYPE = "detail"
-    config.BILI_SPECIFIED_ID_LIST = [video_id]
     config.SAVE_DATA_OPTION = "json"
     config.HEADLESS = True
-    config.ENABLE_CDP_MODE = False
+    config.ENABLE_CDP_MODE = True
     # 禁用爬虫内部的 AI Agent，防止重复运行
     config.ENABLE_AI_AGENT = False
+
+    # Platform specific config
+    if platform == "bili":
+        config.BILI_SPECIFIED_ID_LIST = [video_id]
+        data_dir = os.path.join("data", "bili", "videos", video_id)
+    elif platform == "dy":
+        config.DY_SPECIFIED_ID_LIST = [video_id]
+        data_dir = os.path.join("data", "douyin", "videos", video_id)
+    elif platform == "xhs":
+        # config.XHS_SPECIFIED_ID_LIST = [video_id]
+        # XHS might save images or videos. For now assume videos or check both?
+        # XHS crawler structure might be different. Let's assume data/xhs/notes/{id} or similar.
+        # Checking MediaCrawler structure, usually it is data/xhs/...
+        # Let's check where XHS saves files.
+        # data_dir = os.path.join("data", "xhs", "videos", video_id) # Guessing
+        pass
+    else:
+        print(f"❌ Unsupported platform: {platform}")
+        sys.exit(1)
     
-    print("Configured crawler for Bilibili.")
+    print(f"Configured crawler for {platform}.")
 
     try:
         crawler = CrawlerFactory.create_crawler(platform=config.PLATFORM)
@@ -34,10 +54,18 @@ async def main():
         
         # --- AI Summarization Logic ---
         print("🔍 Checking for video files to summarize...")
-        # Video path pattern: data/bili/videos/{video_id}/*.mp4
-        video_dir = os.path.join("data", "bili", "videos", video_id)
-        video_files = glob.glob(os.path.join(video_dir, "*.mp4"))
         
+        # Search for video files
+        # Note: XHS might not have videos if it's an image note.
+        video_files = []
+        if os.path.exists(data_dir):
+             video_files = glob.glob(os.path.join(data_dir, "*.mp4"))
+        
+        # If no specific video dir, try searching in platform root (some crawlers might behave differently)
+        if not video_files:
+             # Fallback or different structure check
+             pass
+
         if video_files:
             video_path = video_files[0]
             print(f"📹 Found video: {video_path}")

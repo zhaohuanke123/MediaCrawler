@@ -7,10 +7,12 @@ import sys
 import os
 import subprocess
 from .bot import send_feishu_message, send_feishu_markdown
+from tools.social_media_link_parser import SocialMediaLinkParser
 
 app = FastAPI()
+link_parser = SocialMediaLinkParser()
 
-def run_crawler_cli(video_id: str):
+def run_crawler_cli(platform: str, video_id: str):
     """
     在独立进程中运行爬虫
     """
@@ -18,7 +20,7 @@ def run_crawler_cli(video_id: str):
     # 假设 run_crawler_task.py 在项目根目录
     script_path = os.path.join(os.getcwd(), "run_crawler_task.py")
     
-    cmd = [python_exe, script_path, video_id]
+    cmd = [python_exe, script_path, platform, video_id]
     
     print(f"🚀 开始调用爬虫进程: {' '.join(cmd)}")
     
@@ -57,19 +59,19 @@ def run_crawler_cli(video_id: str):
         print(f"❌ 调用异常: {e}")
         return f"Exception: {e}"
 
-async def run_bilibili_crawler(video_id: str):
+async def run_platform_crawler(platform: str, video_id: str):
     """
-    运行 Bilibili 爬虫抓取指定视频
+    运行指定平台的爬虫抓取指定视频
     """
-    print(f"🕷️ 启动 B站爬虫，目标视频 ID: {video_id}")
+    print(f"🕷️ 启动 {platform} 爬虫，目标 ID: {video_id}")
     
     # 【关键点】使用 to_thread 将同步的 subprocess 放到线程池运行
     # 这样既不会阻塞 FastAPI，也不受 EventLoop 类型的限制
-    output = await asyncio.to_thread(run_crawler_cli, video_id)
+    output = await asyncio.to_thread(run_crawler_cli, platform, video_id)
     
     # 检查输出中是否有成功标志
     if "Crawler finished successfully" in output:
-        print(f"✅ B站视频 {video_id} 抓取完成")
+        print(f"✅ {platform} 视频 {video_id} 抓取完成")
         
         # 尝试提取 AI 总结
         summary_match = re.search(r"__SUMMARY_START__\n(.*?)\n__SUMMARY_END__", output, re.DOTALL)
@@ -79,8 +81,20 @@ async def run_bilibili_crawler(video_id: str):
         
         return {"success": True, "summary": None}
     else:
-        print(f"❌ B站爬虫运行可能失败，输出片段: {output[-200:] if output else 'None'}")
+        print(f"❌ {platform} 爬虫运行可能失败，输出片段: {output[-200:] if output else 'None'}")
         return {"success": False, "summary": None}
+
+def extract_id_from_url(platform, url):
+    if platform == "bilibili":
+        match = re.search(r"(BV[a-zA-Z0-9]+)", url)
+        return match.group(1) if match else None
+    elif platform == "douyin":
+        match = re.search(r"/video/(\d+)", url)
+        return match.group(1) if match else None
+    elif platform == "xiaohongshu":
+        match = re.search(r"/(?:item|explore)/([a-f0-9]+)", url)
+        return match.group(1) if match else None
+    return None
 
 async def ai_process_and_reply(chat_id, user_text):
     """
@@ -88,35 +102,69 @@ async def ai_process_and_reply(chat_id, user_text):
     """
     print(f"⏳ 开始后台处理任务，用户内容: {user_text}")
     
-    # 1. 检查是否包含 B站 BV 号
-    # BV号格式通常为 BV1xxxxxxxxx
-    bv_pattern = r"(BV[a-zA-Z0-9]{10})"
-    match = re.search(bv_pattern, user_text)
+    # 使用 SocialMediaLinkParser 解析链接
+    parse_result = link_parser.parse(user_text)
+    platform = parse_result.get("platform")
+    target_url = parse_result.get("target_url")
     
-    if match:
-        video_id = match.group(1)
-        send_feishu_message(chat_id, f"🤖 检测到 B站视频 ID: {video_id}，正在启动爬虫抓取并进行 AI 总结...")
+    # 标记是否已处理，避免重复处理
+    processed = False
+
+    if platform != "unknown" and target_url:
+        video_id = extract_id_from_url(platform, target_url)
         
-        result = await run_bilibili_crawler(video_id)
-        
-        if result["success"]:
-            if result["summary"]:
-                # 使用卡片消息发送 Markdown 总结
-                send_feishu_markdown(chat_id, result["summary"])
-                # 另外发送一条简单的文本确认
-                send_feishu_message(chat_id, f"✅ B站视频 {video_id} 处理完成，总结如上。")
-            else:
-                msg = f"✅ B站视频 {video_id} 抓取完成！数据已保存。\n\n⚠️ 未生成 AI 总结 (可能未配置 API Key 或视频下载失败)。"
-                send_feishu_message(chat_id, msg)
-        else:
-            send_feishu_message(chat_id, f"❌ B站视频 {video_id} 抓取失败，请检查服务器日志。")
+        if video_id:
+            # 映射 platform 名称到 run_crawler_task.py 接受的参数 (bili, dy, xhs)
+            platform_arg = ""
+            if platform == "bilibili":
+                platform_arg = "bili"
+            elif platform == "douyin":
+                platform_arg = "dy"
+            elif platform == "xiaohongshu":
+                platform_arg = "xhs"
             
-    else:
-        # 2. 普通消息处理
-        # === 这里写你的耗时逻辑 (比如调用 ChatGPT / 爬虫) ===
-        await asyncio.sleep(2) # 模拟处理了 2 秒
-        reply_content = f"🤖 我收到了你的消息：\n「{user_text}」\n\n这是服务器异步处理后的回复！"
-        send_feishu_message(chat_id, reply_content)
+            send_feishu_message(chat_id, f"🤖 检测到 {platform} 链接，ID: {video_id}，正在启动爬虫抓取并进行 AI 总结...")
+            
+            result = await run_platform_crawler(platform_arg, video_id)
+            
+            if result["success"]:
+                if result["summary"]:
+                    send_feishu_markdown(chat_id, result["summary"])
+                    send_feishu_message(chat_id, f"✅ 视频 {video_id} 处理完成，总结如上。")
+                else:
+                    send_feishu_message(chat_id, "✅ 视频抓取成功，但未生成总结（可能是因为没有视频文件或 AI 接口未配置）。")
+            else:
+                send_feishu_message(chat_id, "❌ 视频抓取失败，请检查日志。")
+            
+            processed = True
+        else:
+            send_feishu_message(chat_id, f"⚠️ 识别到 {platform} 链接，但无法提取 ID。URL: {target_url}")
+            processed = True # 虽然失败但已尝试处理
+
+    # 如果上面的解析器没有处理（例如没有 URL，只有 BV 号），尝试后备逻辑
+    if not processed:
+        # 尝试旧的 B站 BV 号匹配逻辑作为后备
+        bv_pattern = r"(BV[a-zA-Z0-9]{10})"
+        match = re.search(bv_pattern, user_text)
+        
+        if match:
+            video_id = match.group(1)
+            send_feishu_message(chat_id, f"🤖 检测到 B站视频 ID: {video_id}，正在启动爬虫抓取并进行 AI 总结...")
+            result = await run_platform_crawler("bili", video_id)
+            if result["success"]:
+                if result["summary"]:
+                    send_feishu_markdown(chat_id, result["summary"])
+                    send_feishu_message(chat_id, f"✅ 视频 {video_id} 处理完成，总结如上。")
+                else:
+                    send_feishu_message(chat_id, "✅ 视频抓取成功，但未生成总结。")
+            else:
+                send_feishu_message(chat_id, "❌ 视频抓取失败。")
+        else:
+            # 既不是链接也不是 BV 号，当作普通聊天消息
+            # await asyncio.sleep(2) # 模拟处理
+            # reply_content = f"🤖 我收到了你的消息：\n「{user_text}」\n\n请发送 B站/抖音/小红书 的分享链接或 B站 BV 号。"
+            # send_feishu_message(chat_id, reply_content)
+            print("⚠️ 未检测到支持的社交媒体链接或 ID")
 
 # ---------------- 主路由 ----------------
 
