@@ -75,60 +75,70 @@ class BilibiliCrawler(AbstractCrawler):
             playwright_proxy_format, httpx_proxy_format = utils.format_proxy_info(ip_proxy_info)
 
         async with async_playwright() as playwright:
-            # 根据配置选择启动模式
-            if config.ENABLE_CDP_MODE:
-                utils.logger.info("[BilibiliCrawler] 使用CDP模式启动浏览器")
-                self.browser_context = await self.launch_browser_with_cdp(
-                    playwright,
-                    playwright_proxy_format,
-                    self.user_agent,
-                    headless=config.CDP_HEADLESS,
-                )
-            else:
-                utils.logger.info("[BilibiliCrawler] 使用标准模式启动浏览器")
-                # Launch a browser context.
-                chromium = playwright.chromium
-                self.browser_context = await self.launch_browser(chromium, None, self.user_agent, headless=config.HEADLESS)
-                # stealth.min.js is a js script to prevent the website from detecting the crawler.
-                await self.browser_context.add_init_script(path="libs/stealth.min.js")
+            try:
+                await self._execute_crawler_logic(playwright, playwright_proxy_format, httpx_proxy_format)
+            finally:
+                await self.close()
 
+    async def _execute_crawler_logic(self, playwright, playwright_proxy_format, httpx_proxy_format):
+        # 根据配置选择启动模式
+        if config.ENABLE_CDP_MODE:
+            utils.logger.info("[BilibiliCrawler] 使用CDP模式启动浏览器")
+            self.browser_context = await self.launch_browser_with_cdp(
+                playwright,
+                playwright_proxy_format,
+                self.user_agent,
+                headless=config.CDP_HEADLESS,
+            )
+        else:
+            utils.logger.info("[BilibiliCrawler] 使用标准模式启动浏览器")
+            # Launch a browser context.
+            chromium = playwright.chromium
+            self.browser_context = await self.launch_browser(chromium, None, self.user_agent, headless=config.HEADLESS)
+            # stealth.min.js is a js script to prevent the website from detecting the crawler.
+            await self.browser_context.add_init_script(path="libs/stealth.min.js")
+
+        if self.browser_context.pages:
+            self.context_page = self.browser_context.pages[0]
+        else:
             self.context_page = await self.browser_context.new_page()
-            await self.context_page.goto(self.index_url)
+            
+        await self.context_page.goto(self.index_url)
 
-            # Create a client to interact with the xiaohongshu website.
-            self.bili_client = await self.create_bilibili_client(httpx_proxy_format)
-            if not await self.bili_client.pong():
-                login_obj = BilibiliLogin(
-                    login_type=config.LOGIN_TYPE,
-                    login_phone="",  # your phone number
-                    browser_context=self.browser_context,
-                    context_page=self.context_page,
-                    cookie_str=config.COOKIES,
-                )
-                await login_obj.begin()
-                await self.bili_client.update_cookies(browser_context=self.browser_context)
+        # Create a client to interact with the xiaohongshu website.
+        self.bili_client = await self.create_bilibili_client(httpx_proxy_format)
+        if not await self.bili_client.pong():
+            login_obj = BilibiliLogin(
+                login_type=config.LOGIN_TYPE,
+                login_phone="",  # your phone number
+                browser_context=self.browser_context,
+                context_page=self.context_page,
+                cookie_str=config.COOKIES,
+            )
+            await login_obj.begin()
+            await self.bili_client.update_cookies(browser_context=self.browser_context)
 
-            crawler_type_var.set(config.CRAWLER_TYPE)
-            if config.CRAWLER_TYPE == "search":
-                await self.search()
-            elif config.CRAWLER_TYPE == "detail":
-                # Get the information and comments of the specified post
-                await self.get_specified_videos(config.BILI_SPECIFIED_ID_LIST)
-            elif config.CRAWLER_TYPE == "creator":
-                if config.CREATOR_MODE:
-                    for creator_url in config.BILI_CREATOR_ID_LIST:
-                        try:
-                            creator_info = parse_creator_info_from_url(creator_url)
-                            utils.logger.info(f"[BilibiliCrawler.start] Parsed creator ID: {creator_info.creator_id} from {creator_url}")
-                            await self.get_creator_videos(int(creator_info.creator_id))
-                        except ValueError as e:
-                            utils.logger.error(f"[BilibiliCrawler.start] Failed to parse creator URL: {e}")
-                            continue
-                else:
-                    await self.get_all_creator_details(config.BILI_CREATOR_ID_LIST)
+        crawler_type_var.set(config.CRAWLER_TYPE)
+        if config.CRAWLER_TYPE == "search":
+            await self.search()
+        elif config.CRAWLER_TYPE == "detail":
+            # Get the information and comments of the specified post
+            await self.get_specified_videos(config.BILI_SPECIFIED_ID_LIST)
+        elif config.CRAWLER_TYPE == "creator":
+            if config.CREATOR_MODE:
+                for creator_url in config.BILI_CREATOR_ID_LIST:
+                    try:
+                        creator_info = parse_creator_info_from_url(creator_url)
+                        utils.logger.info(f"[BilibiliCrawler.start] Parsed creator ID: {creator_info.creator_id} from {creator_url}")
+                        await self.get_creator_videos(int(creator_info.creator_id))
+                    except ValueError as e:
+                        utils.logger.error(f"[BilibiliCrawler.start] Failed to parse creator URL: {e}")
+                        continue
             else:
-                pass
-            utils.logger.info("[BilibiliCrawler.start] Bilibili Crawler finished ...")
+                await self.get_all_creator_details(config.BILI_CREATOR_ID_LIST)
+        else:
+            pass
+        utils.logger.info("[BilibiliCrawler.start] Bilibili Crawler finished ...")
 
     async def search(self):
         """

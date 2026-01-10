@@ -128,6 +128,8 @@ class BrowserLauncher:
             "--remote-debugging-address=0.0.0.0",  # 允许远程访问
             "--no-first-run",
             "--no-default-browser-check",
+            # 禁用崩溃恢复气泡，避免干扰
+            "--disable-session-crashed-bubble",
             "--disable-background-timer-throttling",
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding",
@@ -159,8 +161,12 @@ class BrowserLauncher:
         # 用户数据目录
         if user_data_dir:
             args.append(f"--user-data-dir={user_data_dir}")
+            
+        # 确保启动新窗口，避免吸附到现有进程
+        args.append("--new-window")
 
         utils.logger.info(f"[BrowserLauncher] 启动浏览器: {browser_path}")
+        utils.logger.info(f"[BrowserLauncher] 完整启动参数: {' '.join(args)}")
         utils.logger.info(f"[BrowserLauncher] 调试端口: {debug_port}")
         utils.logger.info(f"[BrowserLauncher] 无头模式: {headless}")
 

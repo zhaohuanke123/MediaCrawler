@@ -91,19 +91,22 @@ class CDPBrowserManager:
             # 1. 检测浏览器路径
             browser_path = await self._get_browser_path()
 
-            # 2. 获取可用端口
+            # 2. 尝试清理默认端口上的僵尸进程
+            await self._try_cleanup_existing_browser(config.CDP_DEBUG_PORT, playwright)
+
+            # 3. 获取可用端口
             self.debug_port = self.launcher.find_available_port(config.CDP_DEBUG_PORT)
 
-            # 3. 启动浏览器
+            # 4. 启动浏览器
             await self._launch_browser(browser_path, headless)
 
-            # 4. 注册清理处理器（确保异常退出时也能清理）
+            # 5. 注册清理处理器（确保异常退出时也能清理）
             self._register_cleanup_handlers()
 
-            # 5. 通过CDP连接
+            # 6. 通过CDP连接
             await self._connect_via_cdp(playwright)
 
-            # 5. 创建浏览器上下文
+            # 7. 创建浏览器上下文
             browser_context = await self._create_browser_context(
                 playwright_proxy, user_agent
             )
@@ -115,6 +118,109 @@ class CDPBrowserManager:
             utils.logger.error(f"[CDPBrowserManager] CDP浏览器启动失败: {e}")
             await self.cleanup()
             raise
+
+    async def _try_cleanup_existing_browser(self, port: int, playwright: Playwright):
+        """
+        尝试清理指定端口上已存在的浏览器实例
+        """
+        if self._is_port_available(port):
+            return
+
+        utils.logger.info(f"[CDPBrowserManager] 端口 {port} 被占用，尝试清理僵尸浏览器进程...")
+        
+        try:
+            # 1. 尝试通过CDP协议关闭
+            try:
+                # 尝试获取 WebSocket URL
+                ws_url = await self._get_browser_websocket_url(port)
+                
+                # 尝试连接并关闭
+                utils.logger.info(f"[CDPBrowserManager] 正在连接到旧实例并执行关闭...")
+                browser = await playwright.chromium.connect_over_cdp(ws_url)
+                if browser.is_connected():
+                    await browser.close()
+                    utils.logger.info(f"[CDPBrowserManager] 旧浏览器实例已关闭(通过CDP)")
+                    
+                    # 等待端口释放
+                    for _ in range(10):
+                        if self._is_port_available(port):
+                            utils.logger.info(f"[CDPBrowserManager] 端口 {port} 已释放")
+                            return
+                        await asyncio.sleep(0.5)
+            except Exception as e:
+                utils.logger.warning(f"[CDPBrowserManager] 通过CDP清理旧浏览器失败: {e}")
+
+            # 2. 如果端口仍然被占用，尝试通过系统命令强制杀进程 (Windows)
+            if not self._is_port_available(port):
+                 utils.logger.info(f"[CDPBrowserManager] 端口 {port} 仍被占用，尝试通过系统命令查找并清理...")
+                 await self._force_kill_process_by_port(port)
+                 
+        except Exception as e:
+            utils.logger.warning(f"[CDPBrowserManager] 清理旧浏览器实例失败: {e}")
+
+    async def _force_kill_process_by_port(self, port: int):
+        """通过端口强制杀进程 (主要针对 Windows)"""
+        import sys
+        if sys.platform == "win32":
+            try:
+                # 查找占用端口的 PID
+                # netstat -ano | findstr :<port>
+                cmd = f"netstat -ano | findstr :{port}"
+                proc = await asyncio.create_subprocess_shell(
+                    cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout, _ = await proc.communicate()
+                output = stdout.decode('gbk', errors='ignore') # Windows 默认编码可能为 gbk
+                
+                pids = set()
+                for line in output.splitlines():
+                    parts = line.strip().split()
+                    if len(parts) > 4:
+                        # 端口匹配检查，防止误杀
+                        # netstat 输出类似: TCP 127.0.0.1:9222 0.0.0.0:0 LISTENING 1234
+                        local_addr = parts[1]
+                        if f":{port}" in local_addr:
+                            pid = parts[-1]
+                            if pid.isdigit() and int(pid) > 0:
+                                pids.add(pid)
+                
+                if not pids:
+                    utils.logger.info(f"[CDPBrowserManager] 未找到占用端口 {port} 的进程PID")
+                    return
+
+                for pid in pids:
+                    utils.logger.info(f"[CDPBrowserManager] 正在强制结束进程 PID: {pid}")
+                    # taskkill /F /PID <pid>
+                    kill_cmd = f"taskkill /F /PID {pid}"
+                    await asyncio.create_subprocess_shell(
+                        kill_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE
+                    )
+                
+                # 再次等待端口释放
+                for _ in range(10):
+                     if self._is_port_available(port):
+                         utils.logger.info(f"[CDPBrowserManager] 端口 {port} 已释放(通过taskkill)")
+                         return
+                     await asyncio.sleep(0.5)
+
+            except Exception as e:
+                 utils.logger.error(f"[CDPBrowserManager] 强制结束进程失败: {e}")
+        else:
+            # Linux/Mac 实现 (使用 lsof 或 fuser)
+            pass # 暂未实现，主要针对用户环境 Windows
+
+    def _is_port_available(self, port: int) -> bool:
+        """检查端口是否可用"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', port))
+                return True
+        except OSError:
+            return False
 
     async def _get_browser_path(self) -> str:
         """

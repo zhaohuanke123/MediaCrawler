@@ -3,10 +3,10 @@ from dataclasses import dataclass
 @dataclass
 class VideoSummaryPrompts:
     """
-    Configuration for video summarization prompts.
+    视频总结提示词配置。
     """
     
-    # Prompt for the first chunk of a split video
+    # 分割视频的第一个分片的提示词
     chunk_first: str = """
     请作为一名专业的笔记整理员，观看这段视频并进行详细总结。
     注意：这是一个长视频的第 {chunk_index} 部分（共 {total_chunks} 部分）。
@@ -19,7 +19,7 @@ class VideoSummaryPrompts:
     请用中文输出。
     """
 
-    # Prompt for subsequent chunks of a split video
+    # 分割视频的后续分片的提示词
     chunk_continuation: str = """
     请作为一名专业的笔记整理员，继续观看这段视频并进行详细总结。
     这是一个长视频的第 {chunk_index} 部分（共 {total_chunks} 部分）。
@@ -35,7 +35,7 @@ class VideoSummaryPrompts:
     请用中文输出。
     """
 
-    # Prompt for generating the final summary from chunk summaries
+    # 从分片总结生成最终总结的提示词
     final_summary: str = """
     请作为一名专业的笔记整理员，基于以下各部分的总结，生成一个完整、连贯的视频总结。
     
@@ -54,14 +54,14 @@ class VideoSummaryPrompts:
     由于系统限制，请不要使用 # 标题语法，改用 **加粗** 来表示小标题。不要使用表格。
     """
 
-    # Prompt for a single (short) video
+    # 单个（短）视频的提示词
     single_video: str = """
     请作为一名专业的笔记整理员，观看这段视频并进行详细总结。
     输出格式要求为 Markdown，包含以下部分：
     1. **视频一句话摘要**：简明扼要。
     2. **关键要点 (Key Takeaways)**：使用列表形式。
     3. **详细内容**：按时间逻辑或主题逻辑分段落描述，如果视频中有明确的章节，请列出。
-    4. **后续思考**：基于视频内容延伸的一个启发。
+    4. **后续锐评和思考**：基于视频内容延伸的一个启发。
     
     请用中文输出。
     由于系统限制，请不要使用 # 标题语法，改用 **加粗** 来表示小标题。不要使用表格。
